@@ -17,8 +17,6 @@ services:
       dockerfile: Dockerfile
     volumes:
       - ./backend:/var/www/html
-    env_file:
-      - .backend/.env
     depends_on:
       - db
     networks:
@@ -40,6 +38,8 @@ services:
     image: mysql:8.0
     ports:
       - "3306:3306"
+    env_file:
+      - ./backend/.env
     environment:
       MYSQL_DATABASE: ${DB_DATABASE}
       MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
