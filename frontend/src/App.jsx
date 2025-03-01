@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useEffect,useState } from 'react';
+import axios from "axios";
 import Header from './components/Header';
 import Footer from './components/Footer';
 import Recipe from './pages/Recipe';
@@ -23,6 +24,20 @@ const App = () => {
         return <Recipe />;
     }
   };
+
+  const [items, setItems] = useState([]);
+
+    useEffect(() => {
+        axios.get('http://localhost:8001/api/items')
+            .then(response => {
+                console.log('デバッグ内容');
+                console.log(response.data);
+                setItems(response.data);
+            })
+            .catch(error => {
+                console.error("データの取得に失敗しました:", error);
+            });
+    }, []);
   
   return (
     <div className="flex flex-col h-screen">
