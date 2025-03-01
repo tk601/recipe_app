@@ -15,6 +15,8 @@ services:
     build:
       context: ./docker/php
       dockerfile: Dockerfile
+    ports:
+      - "8000:80"
     volumes:
       - ./backend:/var/www/html
     depends_on:
@@ -27,26 +29,27 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
     ports:
-      - "3000:3000"
+      - "3000:5173"  # Viteでデフォポートが5173
     volumes:
       - ./frontend:/app
       - /app/node_modules
     networks:
       - app-network
+    # environment:
+    #   - CHOKIDAR_USEPOLLING=true
 
   db:
     image: mysql:8.0
     ports:
       - "3306:3306"
-    env_file:
-      - ./backend/.env
     environment:
       MYSQL_DATABASE: ${DB_DATABASE}
       MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
       MYSQL_PASSWORD: ${DB_PASSWORD}
       MYSQL_USER: ${DB_USERNAME}
     volumes:
-      - mysql_data:/var/lib/mysql
+      - .docker/mysql/data:/var/lib/mysql
+      - ./mysql/logs:/var/log/mysql
     networks:
       - app-network
 

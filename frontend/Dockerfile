@@ -1,16 +1,17 @@
-FROM node:18-alpine
+# ベースイメージ
+FROM node:18
 
+# 作業ディレクトリを設定
 WORKDIR /app
 
+# package.jsonとpackage-lock.jsonをコピー
 COPY package*.json ./
 
+# 依存関係をインストール
 RUN npm install
 
-# web-vitalsを事前にインストール
-RUN npm install axios web-vitals
-
+# アプリケーションのソースコードをコピー
 COPY . .
 
-EXPOSE 3000
-
-CMD ["npm", "start"]
+# 開発サーバーを起動
+CMD ["npm", "run", "dev", "--", "--host"]
