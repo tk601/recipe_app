@@ -11,7 +11,9 @@ class ApiTest extends Controller
      */
     public function index()
     {
-        //
+        return response()->json(
+            ['hello world test!'],200
+        );
     }
 
     /**

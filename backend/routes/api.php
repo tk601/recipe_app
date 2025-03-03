@@ -7,7 +7,4 @@ Route::get('/user', function (Request $request) {
     return $request->user();
 })->middleware('auth:sanctum');
 
-Route::get('/items', function () {
-    return response()->json(Good::all());
-});
-
+Route::apiResource('/sample', ApiTest::class);//追記

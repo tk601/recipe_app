@@ -23,3 +23,5 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
 # ユーザー権限の設定
 RUN chown -R www-data:www-data /var/www/html
+
+CMD php artisan serve --host=0.0.0.0 --port=9000
