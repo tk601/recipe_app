@@ -15,20 +15,24 @@ return [
     |
     */
 
-    //デフォ設定 'paths' => ['api/*', 'sanctum/csrf-cookie'],
+    // CORSの有効化
     'paths' => ['api/*'],
 
+    // 許可するHTTPメソッド
     'allowed_methods' => ['*'],
 
-    'allowed_origins' => ['*'],
+    // 許可するオリジン（本番環境では適切に設定すること）
+    'allowed_origins' => ['http://localhost'],
 
-    'allowed_origins_patterns' => [],
-
+    // 許可するヘッダー
     'allowed_headers' => ['*'],
 
+    // レスポンスで公開するヘッダー
     'exposed_headers' => [],
 
-    'max_age' => 0,
+    // 認証情報を含めるかどうか
+    'supports_credentials' => true,
 
-    'supports_credentials' => false,
+    // プリフライトリクエストのキャッシュ時間（秒）
+    'max_age' => 0,
 ];

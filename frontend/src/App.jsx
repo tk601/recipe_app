@@ -28,14 +28,23 @@ const App = () => {
   const [items, setItems] = useState([]);
 
     useEffect(() => {
-        axios.get('/api/items')
+        axios.get('http://localhost:8000/api/test')
             .then(response => {
                 console.log('デバッグ内容');
                 console.log(response.data);
                 setItems(response.data);
             })
             .catch(error => {
-                console.error("データの取得に失敗しました:", error);
+                console.error("データの取得に失敗しました:");
+                if (error.response) {
+                  console.log('レスポンスのエラー:', error.response.data);
+                } else if (error.request) {
+                  console.log('リクエストのエラー:', error.request);
+                } else {
+                  console.log('エラーメッセージ:', error.message);
+                }
+                console.log('エラーメッセージ:', error.message);
+                console.log('エラーの設定:', error.config);
             });
     }, []);
   
