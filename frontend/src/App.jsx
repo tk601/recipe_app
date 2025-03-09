@@ -28,7 +28,7 @@ const App = () => {
   const [items, setItems] = useState([]);
 
     useEffect(() => {
-        axios.get('http://localhost:8000/api/test')
+        axios.get('/api/test')
             .then(response => {
                 console.log('デバッグ内容');
                 console.log(response.data);

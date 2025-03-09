@@ -20,12 +20,9 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
 # Laravel用の設定
 COPY . .
-# Composer のインストール
-COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
 # アプリケーションの権限を設定
 RUN chown -R www-data:www-data /var/www/backend
-# RUN chmod -R 755 /var/www/backend/storage
 
 # 8000番ポートを公開
 EXPOSE 8000
