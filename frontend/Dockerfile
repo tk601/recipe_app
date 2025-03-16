@@ -14,10 +14,10 @@ RUN npm install
 COPY . .
 
 # ビルド
-RUN npm run build
+# RUN npm run build
 
 # 3000番ポートを公開
-EXPOSE 3000
+# EXPOSE 5137
 
 # 開発サーバーを起動
-CMD ["npm", "run", "dev", "--", "--host"]
+CMD ["npm", "run", "dev"]
