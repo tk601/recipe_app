@@ -1,31 +1,28 @@
 FROM php:8.2-fpm
 
-WORKDIR /var/www/backend
+# NodeJSとnpmのインストール
+RUN curl -sL https://deb.nodesource.com/setup_20.x | bash -
+RUN apt-get update && apt-get install -y nodejs
 
-# 必要なパッケージとPHP拡張機能をインストール
+# システム依存パッケージのインストール
 RUN apt-get update && apt-get install -y \
     git \
     curl \
     libpng-dev \
     libonig-dev \
     libxml2-dev \
+    libzip-dev \
     zip \
     unzip
 
-# PHP拡張機能をインストール
-RUN docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd
+# キャッシュクリア
+RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Composerをインストール
+# PHP拡張機能のインストール
+RUN docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd zip
+
+# Composerの取得
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-# Laravel用の設定
-COPY . .
-
-# アプリケーションの権限を設定
-RUN chown -R www-data:www-data /var/www/backend
-
-# 8000番ポートを公開
-EXPOSE 8000
-
-# Laravelを起動
-CMD php artisan serve --host=0.0.0.0 --port=8000
+# 作業ディレクトリの設定
+WORKDIR /var/www/html
