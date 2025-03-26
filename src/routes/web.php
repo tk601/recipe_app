@@ -26,7 +26,7 @@ Route::get('/', function () {
         ]
     ];
     
-    return Inertia::render('Welcome', [
+    return Inertia::render('RecipeMain', [
         'refrigeratorItems' => $refrigeratorItems
     ]);
 });
