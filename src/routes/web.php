@@ -1,32 +1,29 @@
 <?php
 
+use App\Http\Controllers\ProfileController;
+use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
 Route::get('/', function () {
-    // サンプルデータ（後でデータベースから取得する）
-    $refrigeratorItems = [
-        [
-            'id' => 1,
-            'name' => '牛乳',
-            'quantity' => 1,
-            'expiry_date' => '2025-03-30'
-        ],
-        [
-            'id' => 2,
-            'name' => '卵',
-            'quantity' => 6,
-            'expiry_date' => '2025-04-05'
-        ],
-        [
-            'id' => 3,
-            'name' => 'ヨーグルト',
-            'quantity' => 2,
-            'expiry_date' => '2025-03-28'
-        ]
-    ];
-    
-    return Inertia::render('RecipeMain', [
-        'refrigeratorItems' => $refrigeratorItems
-    ]);
+    return Inertia::render('RecipeMain');
 });
+
+// ログイン機能をInertiaで作成した時に作成されたもの
+// Route::get('/', function () {
+//     return Inertia::render('Welcome', [
+//         'canLogin' => Route::has('login'),
+//         'canRegister' => Route::has('register'),
+//         'laravelVersion' => Application::VERSION,
+//         'phpVersion' => PHP_VERSION,
+//     ]);
+// });
+// Route::get('/dashboard', function () {
+//     return Inertia::render('Dashboard');
+// })->middleware(['auth', 'verified'])->name('dashboard');
+// Route::middleware('auth')->group(function () {
+//     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+//     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+//     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+// });
+// require __DIR__.'/auth.php';

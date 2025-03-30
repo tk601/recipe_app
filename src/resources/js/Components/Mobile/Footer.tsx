@@ -1,4 +1,9 @@
-const Footer = ({ currentPage, setCurrentPage }) => {
+const Footer = ({
+    currentPage, setCurrentPage
+}: {
+    currentPage: string;
+    setCurrentPage: (page: string) => void;
+}) => {
     return (
         <footer className="bg-white border-t">
             <div className="flex justify-around items-center">
