@@ -9,7 +9,7 @@ Route::get('/', function () {
     return Inertia::render('RecipeMain');
 });
 
-// ログイン機能をInertiaで作成した時に作成されたもの
+// // ログイン機能をInertiaで作成した時に作成されたもの
 // Route::get('/', function () {
 //     return Inertia::render('Welcome', [
 //         'canLogin' => Route::has('login'),

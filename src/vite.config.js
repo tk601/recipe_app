@@ -15,5 +15,8 @@ export default defineConfig({
         hmr: {
             host: 'localhost',
         },
+        watch: {
+            usePolling: true,  // ファイル変更を検出するためのポーリングを有効化
+        },
     },    
 });

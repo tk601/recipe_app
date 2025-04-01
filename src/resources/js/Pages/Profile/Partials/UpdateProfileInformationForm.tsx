@@ -15,6 +15,9 @@ export default function UpdateProfileInformation({
     status?: string;
     className?: string;
 }) {
+    // デバッグ用のログ出力
+    console.log('mustVerifyEmail:', mustVerifyEmail);
+    console.log('status:', status);
     const user = usePage().props.auth.user;
 
     const { data, setData, patch, errors, processing, recentlySuccessful } =
@@ -33,7 +36,7 @@ export default function UpdateProfileInformation({
         <section className={className}>
             <header>
                 <h2 className="text-lg font-medium text-gray-900">
-                    プロフィールです
+                    プロフィールですなは
                 </h2>
 
                 <p className="mt-1 text-sm text-gray-600">
@@ -98,7 +101,7 @@ export default function UpdateProfileInformation({
                 )}
 
                 <div className="flex items-center gap-4">
-                    <PrimaryButton disabled={processing}>Save</PrimaryButton>
+                    <PrimaryButton disabled={processing}>Saveするボタンです</PrimaryButton>
 
                     <Transition
                         show={recentlySuccessful}
@@ -108,7 +111,7 @@ export default function UpdateProfileInformation({
                         leaveTo="opacity-0"
                     >
                         <p className="text-sm text-gray-600">
-                            Saved.
+                            Saveが完了しました
                         </p>
                     </Transition>
                 </div>

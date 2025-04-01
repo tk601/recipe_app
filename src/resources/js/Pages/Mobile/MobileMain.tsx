@@ -27,7 +27,7 @@ const MobileMain = () => {
     return (
         <div>
             <Header />
-            <h1>テストです</h1>
+            <h1>テストですね</h1>
             <main className="flex-1 overflow-auto p-4">
                 {renderPage()}
             </main>

@@ -5,7 +5,8 @@ export default function Welcome({
     auth,
     laravelVersion,
     phpVersion,
-}: PageProps<{ laravelVersion: string; phpVersion: string }>) {
+    canLogin,
+}: PageProps<{ laravelVersion: string; phpVersion: string; canLogin: boolean }>) {
     const handleImageError = () => {
         document
             .getElementById('screenshot-container')
@@ -19,6 +20,7 @@ export default function Welcome({
 
     return (
         <>
+            {canLogin ? (<p>loginしてください</p>) : (<p>すでにログイン</p>)}
             <Head title="Welcome" />
             <div className="bg-gray-50 text-black/50 dark:bg-black dark:text-white/50">
                 <img
