@@ -1,25 +1,28 @@
 FROM php:8.2-fpm
 
-WORKDIR /var/www/html
+# NodeJSとnpmのインストール
+RUN curl -sL https://deb.nodesource.com/setup_20.x | bash -
+RUN apt-get update && apt-get install -y nodejs
 
-# PHPの拡張機能インストール
-RUN apt-get update && apt-get install -y bash \
+# システム依存パッケージのインストール
+RUN apt-get update && apt-get install -y \
     git \
-    vim \
     curl \
     libpng-dev \
     libonig-dev \
     libxml2-dev \
+    libzip-dev \
     zip \
     unzip
 
-RUN docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd
+# キャッシュクリア
+RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# デフォルトシェルを bash に設定
-SHELL ["/bin/bash", "-c"]
+# PHP拡張機能のインストール
+RUN docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd zip
 
-# Composer のインストール
+# Composerの取得
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-# ユーザー権限の設定
-RUN chown -R www-data:www-data /var/www/html
+# 作業ディレクトリの設定
+WORKDIR /var/www/html
