@@ -122,6 +122,11 @@ export default function Login({
                         href={route('login.line')}
                         className="w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-[#06C755] text-sm font-medium text-white hover:bg-[#06B64B] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#06C755]"
                     >
+                        <img 
+                            src="/images/LINE_Brand_icon.png" 
+                            alt="LINE" 
+                            className="h-5 w-5 mr-2" 
+                        />
                         <span>LINEでログイン</span>
                     </a>
                 </div>
