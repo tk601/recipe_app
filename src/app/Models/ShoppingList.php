@@ -5,12 +5,16 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+// 買い物リスト
 class ShoppingList extends Model
 {
+    protected $table = 'shopping_lists'; 
+
     protected $fillable = [
         'ingredients_id',
         'check_flg',
         'user_id',
+        'created_at'
     ];
 
     // public function ingredient(): BelongsTo

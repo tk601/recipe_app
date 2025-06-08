@@ -6,14 +6,18 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
+// 食材
 class Ingredient extends Model
 {
+    protected $table = 'ingredients'; 
+
     protected $fillable = [
         'ingredients_name',
-        'ingredients_id',
+        'ingredients_category_id',
         'ingredients_image_url',
         'user_id',
         'seasoning_flg',
+        'created_at'
     ];
 
     // public function user(): BelongsTo

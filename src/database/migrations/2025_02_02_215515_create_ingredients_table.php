@@ -15,7 +15,7 @@ return new class extends Migration
         Schema::create('ingredients', function (Blueprint $table) {
             $table->id();
             $table->string('ingredients_name', 50)->nullable(false)->comment('材料名');
-            $table->unsignedBigInteger('ingredients_id')->comment('材料カテゴリ名ID');
+            $table->unsignedBigInteger('ingredients_category_id')->comment('材料カテゴリ名ID');
             $table->string('ingredients_image_url', 2048)->nullable(false)->comment('材料画像URL');
             $table->unsignedBigInteger('user_id')->comment('ユーザーID');
             $table->tinyInteger('seasoning_flg')->default(0)->nullable(false)->comment('調味料フラグ 0:食材 1:調味料');

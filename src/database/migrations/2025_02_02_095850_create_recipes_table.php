@@ -22,6 +22,7 @@ return new class extends Migration
             $table->tinyInteger('publish_flg')->default(0)->nullable(false)->comment('公開フラグ');
             $table->unsignedBigInteger('user_id')->comment('ユーザーID');
             $table->timestamp('created_at')->useCurrent()->comment('作成日時');
+            $table->timestamp('updated_at')->useCurrent()->comment('更新日時');
         });
     }
 

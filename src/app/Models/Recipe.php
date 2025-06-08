@@ -6,8 +6,11 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
+// レシピ
 class Recipe extends Model
 {
+    protected $table = 'recipes';
+
     protected $fillable = [
         'recipe_name',
         'recipe_category_id',
@@ -16,6 +19,8 @@ class Recipe extends Model
         'recommended_points',
         'publish_flg',
         'user_id',
+        'created_at',
+        'updated_at'
     ];
 
     // public function user(): BelongsTo
