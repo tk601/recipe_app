@@ -3,48 +3,49 @@
 namespace App\Http\Controllers;
 
 use App\Models\Ingredient;
+use App\Models\IngredientsCategory;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 
 class IngredientController extends Controller
 {
     /**
      * 材料一覧を表示
+     * デフォルトで「野菜」のカテゴリーを表示する
      */
     public function index(Request $request)
     {
-        // // ログインユーザーの材料を取得
-        // $query = Ingredient::where('user_id', Auth::id())
-        //     ->orderBy('expiry_date', 'asc');
+        // TODO::検索条件を作成する
+        // 理想：空白を削除するとか、漢字でもひらがなでもカナでもカタカナでも、全角でも半角でも、検索できるようにする
 
-        // // カテゴリーでフィルタリング
-        // if ($request->has('category') && $request->category !== '') {
-        //     $query->where('category', $request->category);
-        // }
+        // カテゴリの一覧を取得する
+        $categories = IngredientsCategory::select('id', 'ingredients_category_name')
+            ->orderBy('id', 'asc')
+            ->get();
 
-        // // 検索機能
-        // if ($request->has('search') && $request->search !== '') {
-        //     $query->where('name', 'like', '%' . $request->search . '%');
-        // }
+        // デフォルトカテゴリとして「野菜」を設定し、存在しない場合は最初のカテゴリを設定する
+        $defaultCategory = $categories->firstWhere('ingredients_category_name', '野菜') ?? $categories->first();
+        $defaultCategoryId = $request->get('category', $defaultCategory->id);
 
-        // $ingredients = $query->paginate(10);
 
-        // // カテゴリー一覧を取得
-        // $categories = Ingredient::where('user_id', Auth::id())
-        //     ->distinct()
-        //     ->pluck('category')
-        //     ->filter()
-        //     ->sort()
-        //     ->values();
+        // 食材の一覧を取得する
+        $ingredients = Ingredient::select('ingredients_categories.ingredients_category_name', 'ingredients_categories.id as category_id', 'ingredients.id as ingredient_id','ingredients.ingredients_name', 'ingredients.ingredients_image_url', 'ingredients.seasoning_flg')
+            ->join('ingredients_categories', 'ingredients.ingredients_category_id', '=', 'ingredients_categories.id')
+            ->where('ingredients_category_id', $defaultCategoryId)
+            ->when($request->search, function ($query, $search) {
+                return $query->where('ingredients_name', 'like', "%{$search}%");
+            })
+            ->orderBy('ingredients_name', 'asc')
+            ->get();
 
-        $ingredients = 'テスト1';
-        $categories = 'テスト2';
 
         return Inertia::render('Ingredients/Index', [
-            'ingredients' => $ingredients,
             'categories' => $categories,
-            // 'filters' => $request->only(['category', 'search']),
+            'ingredients' => $ingredients,
+            'activeCategory' => (int) $defaultCategoryId,
+            'searchQuery' => $request->search ?? '',
         ]);
     }
 

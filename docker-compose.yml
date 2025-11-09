@@ -20,6 +20,8 @@ services:
     volumes:
       - ./src:/var/www/html
       - ./docker/nginx:/etc/nginx/conf.d
+    depends_on:
+      - app
     networks:
       - app-network
 

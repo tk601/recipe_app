@@ -106,7 +106,7 @@ export default function Login({
                 </div>
             </form>
 
-            {/* LINEログインボタンの追加 */}
+            {/* LINEログインボタン */}
             <div className="mt-6">
                 <div className="relative">
                     <div className="absolute inset-0 flex items-center">
