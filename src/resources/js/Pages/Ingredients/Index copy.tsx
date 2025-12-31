@@ -1,7 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Head, Link, router } from '@inertiajs/react';
-import Footer from '@/Components/Mobile/Footer';
-
 
 interface Props {
     auth: {
@@ -13,13 +11,13 @@ interface Props {
     };
     categories: Array<{
         id: number;
-        category_name: string;
+        ingredients_category_name: string;
     }>;
     ingredients: Array<{
         ingredient_id: number;
-        category_name: string;
-        name: string;
-        image_url: string;
+        ingredients_category_name: string;
+        ingredients_name: string;
+        ingredients_image_url: string;
         seasoning_flg: number;
     }>;
     filters: {
@@ -36,10 +34,12 @@ export default function IngredientsIndex({ categories, ingredients, activeCatego
     // console.log('activeCategory', activeCategory);
     // console.log('searchQuery', searchQuery);
     // console.log('React version:', React.version);
+    useEffect(() => {
+        document.documentElement.setAttribute('data-theme', 'light');
+    }, []);
     
     // 検索クエリの状態管理
     const [search, setSearch] = useState(searchQuery || '');
-    const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     
     /**
      * カテゴリ選択時の処理
@@ -63,19 +63,17 @@ export default function IngredientsIndex({ categories, ingredients, activeCatego
         const value = e.target.value;
         setSearch(value);
         
-        // デバウンス処理（300ms後に検索実行）
-        if (searchTimeoutRef.current) {
-            clearTimeout(searchTimeoutRef.current);
-        }
-        searchTimeoutRef.current = setTimeout(() => {
-            router.get(route('ingredients.index'), {
-                category: activeCategory,
-                search: value || undefined
-            }, {
-                preserveState: true,
-                replace: true
-            });
-        }, 300);
+        // // デバウンス処理（300ms後に検索実行）
+        // clearTimeout(window.searchTimeout);
+        // window.searchTimeout = setTimeout(() => {
+        //     router.get(route('ingredients.index'), {
+        //         category: activeCategory,
+        //         search: value || undefined
+        //     }, {
+        //         preserveState: true,
+        //         replace: true
+        //     });
+        // }, 300);
     };
 
     return (
@@ -125,7 +123,7 @@ export default function IngredientsIndex({ categories, ingredients, activeCatego
                                     }
                                 `}
                             >
-                                {category.name}
+                                {category.ingredients_category_name}
                             </button>
                         ))}
                     </div>
@@ -143,10 +141,10 @@ export default function IngredientsIndex({ categories, ingredients, activeCatego
                             >
                                 <div className="aspect-square bg-gray-100 rounded-t-lg overflow-hidden">
                                     {/*
-                                    {ingredient.image_url ? (
+                                    {ingredient.ingredients_image_url ? (
                                         <img
-                                            src={ingredient.image_url}
-                                            alt={ingredient.name}
+                                            src={ingredient.ingredients_image_url}
+                                            alt={ingredient.ingredients_name}
                                             className="w-full h-full object-cover"
                                         />
                                     ) : (
@@ -159,7 +157,7 @@ export default function IngredientsIndex({ categories, ingredients, activeCatego
                                 
                                 <div className="p-4">
                                     <h3 className="font-semibold text-gray-900 text-lg mb-2">
-                                        {ingredient.name}
+                                        {ingredient.ingredients_name}
                                     </h3>
                                     {ingredient.description && (
                                         <p className="text-gray-600 text-sm line-clamp-2">

@@ -6,13 +6,13 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 // 食材カテゴリ
-class IngredientsCategory extends Model
+class IngredientCategory extends Model
 {
-    protected $table = 'ingredients_categories'; 
+    protected $table = 'ingredient_categories'; 
 
     protected $fillable = [
-        'ingredients_category_name',
-        'ingredients_category_image_url',
+        'category_name',
+        'category_image_url',
     ];
 
     // public function ingredients(): HasMany

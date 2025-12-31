@@ -1,4 +1,4 @@
-FROM php:8.2-fpm
+FROM php:8.4-fpm
 
 # NodeJSとnpmのインストール
 RUN curl -sL https://deb.nodesource.com/setup_20.x | bash -
@@ -13,7 +13,12 @@ RUN apt-get update && apt-get install -y \
     libxml2-dev \
     libzip-dev \
     zip \
-    unzip
+    unzip \
+    bash \
+    && rm -rf /var/lib/apt/lists/*
+
+# デフォルトシェルを bash に設定
+ENV SHELL=/bin/bash
 
 # キャッシュクリア
 RUN apt-get clean && rm -rf /var/lib/apt/lists/*

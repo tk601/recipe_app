@@ -30,7 +30,7 @@ export default function Login({
 
     return (
         <GuestLayout>
-            <Head title="ログイン" />
+            <Head title="ごはんどきログイン" />
 
             {status && (
                 <div className="mb-4 text-sm font-medium text-green-600">
@@ -72,23 +72,8 @@ export default function Login({
                     <InputError message={errors.password} className="mt-2" />
                 </div>
 
-                <div className="mt-4 block">
-                    <label className="flex items-center">
-                        <Checkbox
-                            name="remember"
-                            checked={data.remember}
-                            onChange={(e) =>
-                                setData(
-                                    'remember',
-                                    (e.target.checked || false) as false,
-                                )
-                            }
-                        />
-                        <span className="ms-2 text-sm text-gray-600">
-                            ログイン状態を保持する
-                        </span>
-                    </label>
-                </div>
+                {/* ログイン状態を保持する */}
+                <input type="hidden" name="remember" value="true" />
 
                 <div className="mt-4 flex items-center justify-end">
                     {canResetPassword && (
@@ -130,6 +115,15 @@ export default function Login({
                         <span>LINEでログイン</span>
                     </a>
                 </div>
+            </div>
+
+            <div className="mt-6">
+                <Link
+                    href={route('register')}
+                    className="rounded-md text-sm text-gray-600 underline hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+                >
+                    新規登録はこちら
+                </Link>
             </div>
         </GuestLayout>
     );

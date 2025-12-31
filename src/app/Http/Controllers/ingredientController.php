@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Ingredient;
-use App\Models\IngredientsCategory;
+use App\Models\IngredientCategory;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Auth;
@@ -20,24 +20,26 @@ class IngredientController extends Controller
         // TODO::検索条件を作成する
         // 理想：空白を削除するとか、漢字でもひらがなでもカナでもカタカナでも、全角でも半角でも、検索できるようにする
 
+        // var_dump($request->search);
+
         // カテゴリの一覧を取得する
-        $categories = IngredientsCategory::select('id', 'ingredients_category_name')
+        $categories = IngredientCategory::select('id', 'name')
             ->orderBy('id', 'asc')
             ->get();
 
         // デフォルトカテゴリとして「野菜」を設定し、存在しない場合は最初のカテゴリを設定する
-        $defaultCategory = $categories->firstWhere('ingredients_category_name', '野菜') ?? $categories->first();
+        $defaultCategory = $categories->firstWhere('name', '野菜') ?? $categories->first();
         $defaultCategoryId = $request->get('category', $defaultCategory->id);
 
 
         // 食材の一覧を取得する
-        $ingredients = Ingredient::select('ingredients_categories.ingredients_category_name', 'ingredients_categories.id as category_id', 'ingredients.id as ingredient_id','ingredients.ingredients_name', 'ingredients.ingredients_image_url', 'ingredients.seasoning_flg')
-            ->join('ingredients_categories', 'ingredients.ingredients_category_id', '=', 'ingredients_categories.id')
-            ->where('ingredients_category_id', $defaultCategoryId)
+        $ingredients = Ingredient::select('ingredient_categories.name', 'ingredient_categories.id as category_id', 'ingredients.id as ingredient_id','ingredients.name', 'ingredients.image_url', 'ingredients.seasoning_flg')
+            ->join('ingredient_categories', 'ingredients.ingredient_category_id', '=', 'ingredient_categories.id')
+            ->where('ingredient_category_id', $defaultCategoryId)
             ->when($request->search, function ($query, $search) {
-                return $query->where('ingredients_name', 'like', "%{$search}%");
+                return $query->where('ingredients.name', 'like', "%{$search}%");
             })
-            ->orderBy('ingredients_name', 'asc')
+            ->orderBy('ingredients.name', 'asc')
             ->get();
 
 

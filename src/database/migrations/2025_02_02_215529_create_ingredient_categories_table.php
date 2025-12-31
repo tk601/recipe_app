@@ -12,10 +12,10 @@ return new class extends Migration
     public function up(): void
     {
         // 材料カテゴリ
-        Schema::create('ingredients_categories', function (Blueprint $table) {
+        Schema::create('ingredient_categories', function (Blueprint $table) {
             $table->id();
-            $table->string('ingredients_category_name', 50)->nullable(false)->comment('材料カテゴリ名');
-            $table->string('ingredients_category_image_url', 2048)->nullable(false)->comment('材料カテゴリ画像URL');
+            $table->string('name', 50)->nullable(false)->comment('材料カテゴリ名');
+            $table->string('image_url', 2048)->nullable(true)->comment('材料カテゴリ画像URL');
         });
     }
 
@@ -24,6 +24,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('ingredients_categories');
+        Schema::dropIfExists('ingredient_categories');
     }
 };

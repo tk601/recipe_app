@@ -25,7 +25,7 @@ Route::get('/dashboard', function () {
 })->middleware(['auth', 'verified'])->name('dashboard');
 
 // ログインユーザーのみアクセス可能なルート
-Route::middleware('auth')->group(function () {
+// Route::middleware('auth')->group(function () {
     // プロフィール関連（breezeで作成したもの）
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
@@ -37,5 +37,5 @@ Route::middleware('auth')->group(function () {
     // // API用ルート
     // Route::get('/api/ingredients/expiring-soon', [IngredientController::class, 'expiringSoon'])
     //     ->name('ingredients.expiring-soon');
-});
+// });
 require __DIR__.'/auth.php';
