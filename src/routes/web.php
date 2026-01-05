@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\IngredientController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -19,11 +20,23 @@ Route::get('/', function () {
     ]);
 });
 Route::get('/dashboard', function () {
-    return Inertia::render('Dashboard');
+    // return Inertia::render('Dashboard');
+    return redirect()->route('ingredients.index');
 })->middleware(['auth', 'verified'])->name('dashboard');
+
+// ログインユーザーのみアクセス可能なルート
 Route::middleware('auth')->group(function () {
+    // プロフィール関連（breezeで作成したもの）
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+
+    // 材料管理のルート
+    Route::resource('ingredients', IngredientController::class);
+
+    // 冷蔵庫の在庫状態を切り替え
+    Route::post('/ingredients/toggle-refrigerator', [IngredientController::class, 'toggleRefrigerator'])
+        ->name('ingredients.toggle-refrigerator');
+
 });
 require __DIR__.'/auth.php';
