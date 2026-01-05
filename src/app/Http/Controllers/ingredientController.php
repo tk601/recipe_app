@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Ingredient;
 use App\Models\IngredientCategory;
+use App\Models\Refrigerator;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Auth;
@@ -20,7 +21,7 @@ class IngredientController extends Controller
         // TODO::検索条件を作成する
         // 理想：空白を削除するとか、漢字でもひらがなでもカナでもカタカナでも、全角でも半角でも、検索できるようにする
 
-        // var_dump($request->search);
+        Log::info('search:', ['value' => $request->search]);
 
         // カテゴリの一覧を取得する
         $categories = IngredientCategory::select('id', 'name')
@@ -32,184 +33,85 @@ class IngredientController extends Controller
         $defaultCategoryId = $request->get('category', $defaultCategory->id);
 
 
+        // ユーザーの冷蔵庫にある食材IDを取得
+        $userRefrigeratorIngredients = Refrigerator::where('user_id', Auth::id())
+            ->pluck('ingredients_id')
+            ->toArray();
+
         // 食材の一覧を取得する
-        $ingredients = Ingredient::select('ingredient_categories.name', 'ingredient_categories.id as category_id', 'ingredients.id as ingredient_id','ingredients.name', 'ingredients.image_url', 'ingredients.seasoning_flg')
+        $ingredients = Ingredient::select('ingredient_categories.name as category_name', 'ingredient_categories.id as category_id', 'ingredients.id as ingredient_id','ingredients.name', 'ingredients.image_url', 'ingredients.seasoning_flg')
             ->join('ingredient_categories', 'ingredients.ingredient_category_id', '=', 'ingredient_categories.id')
             ->where('ingredient_category_id', $defaultCategoryId)
-            ->when($request->search, function ($query, $search) {
-                return $query->where('ingredients.name', 'like', "%{$search}%");
-            })
             ->orderBy('ingredients.name', 'asc')
-            ->get();
+            ->get()
+            ->map(function ($ingredient) use ($userRefrigeratorIngredients) {
+                // 冷蔵庫にあるかどうかのフラグを追加
+                $ingredient->in_refrigerator = in_array($ingredient->ingredient_id, $userRefrigeratorIngredients);
+                return $ingredient;
+            });
 
+        // 検索用：全カテゴリの食材を取得（検索候補表示用）
+        $allIngredients = Ingredient::select('ingredient_categories.name as category_name', 'ingredient_categories.id as category_id', 'ingredients.id as ingredient_id','ingredients.name', 'ingredients.image_url', 'ingredients.seasoning_flg')
+            ->join('ingredient_categories', 'ingredients.ingredient_category_id', '=', 'ingredient_categories.id')
+            ->orderBy('ingredients.name', 'asc')
+            ->get()
+            ->map(function ($ingredient) use ($userRefrigeratorIngredients) {
+                // 冷蔵庫にあるかどうかのフラグを追加
+                $ingredient->in_refrigerator = in_array($ingredient->ingredient_id, $userRefrigeratorIngredients);
+                return $ingredient;
+            });
+
+
+        // デバッグ: リクエストパラメータを確認
+        \Log::info('Request parameters:', [
+            'all' => $request->all(),
+            'query' => $request->query(),
+            'highlight_input' => $request->input('highlight'),
+            'highlight_query' => $request->query('highlight'),
+        ]);
+
+        // highlightパラメータを取得（query stringから）
+        $highlightId = $request->query('highlight') ? (int) $request->query('highlight') : null;
+        \Log::info('highlightId:', ['value' => $highlightId]);
 
         return Inertia::render('Ingredients/Index', [
             'categories' => $categories,
             'ingredients' => $ingredients,
+            'allIngredients' => $allIngredients,
             'activeCategory' => (int) $defaultCategoryId,
             'searchQuery' => $request->search ?? '',
+            'highlightId' => $highlightId,
         ]);
     }
 
-    // /**
-    //  * 材料作成フォームを表示
-    //  */
-    // public function create()
-    // {
-    //     // よく使うカテゴリーの候補
-    //     $categoryOptions = [
-    //         '野菜',
-    //         '果物',
-    //         '肉類',
-    //         '魚介類',
-    //         '乳製品',
-    //         '調味料',
-    //         '冷凍食品',
-    //         'その他'
-    //     ];
+    /**
+     * 冷蔵庫の在庫状態を切り替え
+     */
+    public function toggleRefrigerator(Request $request)
+    {
+        $validated = $request->validate([
+            'ingredient_id' => 'required|exists:ingredients,id',
+            'in_refrigerator' => 'required|boolean',
+        ]);
 
-    //     return Inertia::render('Ingredients/Create', [
-    //         'categoryOptions' => $categoryOptions,
-    //     ]);
-    // }
+        $userId = Auth::id();
+        $ingredientId = $validated['ingredient_id'];
+        $inRefrigerator = $validated['in_refrigerator'];
 
-    // /**
-    //  * 材料を保存
-    //  */
-    // public function store(Request $request)
-    // {
-    //     // バリデーション
-    //     $validated = $request->validate([
-    //         'name' => 'required|string|max:255',
-    //         'category' => 'required|string|max:100',
-    //         'quantity' => 'required|numeric|min:0',
-    //         'unit' => 'required|string|max:50',
-    //         'expiry_date' => 'nullable|date|after_or_equal:today',
-    //         'memo' => 'nullable|string|max:1000',
-    //     ], [
-    //         'name.required' => '材料名は必須です。',
-    //         'category.required' => 'カテゴリーは必須です。',
-    //         'quantity.required' => '数量は必須です。',
-    //         'quantity.numeric' => '数量は数値で入力してください。',
-    //         'quantity.min' => '数量は0以上で入力してください。',
-    //         'unit.required' => '単位は必須です。',
-    //         'expiry_date.date' => '有効な日付を入力してください。',
-    //         'expiry_date.after_or_equal' => '賞味期限は今日以降の日付を入力してください。',
-    //     ]);
+        if ($inRefrigerator) {
+            // 冷蔵庫に追加
+            Refrigerator::firstOrCreate([
+                'user_id' => $userId,
+                'ingredients_id' => $ingredientId,
+            ]);
+        } else {
+            // 冷蔵庫から削除
+            Refrigerator::where('user_id', $userId)
+                ->where('ingredients_id', $ingredientId)
+                ->delete();
+        }
 
-    //     // ログインユーザーのIDを追加
-    //     $validated['user_id'] = Auth::id();
-
-    //     // 材料を作成
-    //     Ingredient::create($validated);
-
-    //     return redirect()->route('ingredients.index')
-    //         ->with('message', '材料を登録しました。');
-    // }
-
-    // /**
-    //  * 材料詳細を表示
-    //  */
-    // public function show(Ingredient $ingredient)
-    // {
-    //     // 自分の材料のみアクセス可能
-    //     if ($ingredient->user_id !== Auth::id()) {
-    //         abort(403);
-    //     }
-
-    //     return Inertia::render('Ingredients/Show', [
-    //         'ingredient' => $ingredient,
-    //     ]);
-    // }
-
-    // /**
-    //  * 材料編集フォームを表示
-    //  */
-    // public function edit(Ingredient $ingredient)
-    // {
-    //     // 自分の材料のみアクセス可能
-    //     if ($ingredient->user_id !== Auth::id()) {
-    //         abort(403);
-    //     }
-
-    //     $categoryOptions = [
-    //         '野菜',
-    //         '果物',
-    //         '肉類',
-    //         '魚介類',
-    //         '乳製品',
-    //         '調味料',
-    //         '冷凍食品',
-    //         'その他'
-    //     ];
-
-    //     return Inertia::render('Ingredients/Edit', [
-    //         'ingredient' => $ingredient,
-    //         'categoryOptions' => $categoryOptions,
-    //     ]);
-    // }
-
-    // /**
-    //  * 材料を更新
-    //  */
-    // public function update(Request $request, Ingredient $ingredient)
-    // {
-    //     // 自分の材料のみ更新可能
-    //     if ($ingredient->user_id !== Auth::id()) {
-    //         abort(403);
-    //     }
-
-    //     // バリデーション
-    //     $validated = $request->validate([
-    //         'name' => 'required|string|max:255',
-    //         'category' => 'required|string|max:100',
-    //         'quantity' => 'required|numeric|min:0',
-    //         'unit' => 'required|string|max:50',
-    //         'expiry_date' => 'nullable|date',
-    //         'memo' => 'nullable|string|max:1000',
-    //     ], [
-    //         'name.required' => '材料名は必須です。',
-    //         'category.required' => 'カテゴリーは必須です。',
-    //         'quantity.required' => '数量は必須です。',
-    //         'quantity.numeric' => '数量は数値で入力してください。',
-    //         'quantity.min' => '数量は0以上で入力してください。',
-    //         'unit.required' => '単位は必須です。',
-    //         'expiry_date.date' => '有効な日付を入力してください。',
-    //     ]);
-
-    //     // 材料を更新
-    //     $ingredient->update($validated);
-
-    //     return redirect()->route('ingredients.index')
-    //         ->with('message', '材料を更新しました。');
-    // }
-
-    // /**
-    //  * 材料を削除
-    //  */
-    // public function destroy(Ingredient $ingredient)
-    // {
-    //     // 自分の材料のみ削除可能
-    //     if ($ingredient->user_id !== Auth::id()) {
-    //         abort(403);
-    //     }
-
-    //     $ingredient->delete();
-
-    //     return redirect()->route('ingredients.index')
-    //         ->with('message', '材料を削除しました。');
-    // }
-
-    // /**
-    //  * 賞味期限が近い材料を取得（API）
-    //  */
-    // public function expiringSoon()
-    // {
-    //     $ingredients = Ingredient::where('user_id', Auth::id())
-    //         ->expiringSoon()
-    //         ->orderBy('expiry_date', 'asc')
-    //         ->get();
-
-    //     return response()->json($ingredients);
-    // }
+        // Inertiaリクエストの場合は前のページにリダイレクト（非同期で状態を保持）
+        return redirect()->back();
+    }
 }

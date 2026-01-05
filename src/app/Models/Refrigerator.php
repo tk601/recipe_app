@@ -8,7 +8,10 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 // 冷蔵庫に保存されている材料データ
 class Refrigerator extends Model
 {
-    protected $table = 'refrigerators'; 
+    protected $table = 'refrigerators';
+
+    // updated_atカラムは使用しない（created_atのみ使用）
+    const UPDATED_AT = null;
 
     protected $fillable = [
         'ingredients_id',

@@ -25,7 +25,7 @@ Route::get('/dashboard', function () {
 })->middleware(['auth', 'verified'])->name('dashboard');
 
 // ログインユーザーのみアクセス可能なルート
-// Route::middleware('auth')->group(function () {
+Route::middleware('auth')->group(function () {
     // プロフィール関連（breezeで作成したもの）
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
@@ -34,8 +34,9 @@ Route::get('/dashboard', function () {
     // 材料管理のルート
     Route::resource('ingredients', IngredientController::class);
 
-    // // API用ルート
-    // Route::get('/api/ingredients/expiring-soon', [IngredientController::class, 'expiringSoon'])
-    //     ->name('ingredients.expiring-soon');
-// });
+    // 冷蔵庫の在庫状態を切り替え
+    Route::post('/ingredients/toggle-refrigerator', [IngredientController::class, 'toggleRefrigerator'])
+        ->name('ingredients.toggle-refrigerator');
+
+});
 require __DIR__.'/auth.php';
