@@ -7,10 +7,13 @@ use App\Models\RecipeCategory;
 use App\Models\RecipeIngredient;
 use App\Models\Refrigerator;
 use App\Models\RecipeInstruction;
+use App\Models\Ingredient;
+use App\Models\IngredientCategory;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 
 class RecipeController extends Controller
 {
@@ -235,6 +238,119 @@ class RecipeController extends Controller
             'ingredients' => $ingredients,
             'instructions' => $instructions,
         ]);
+    }
+
+    /**
+     * レシピ作成画面を表示
+     */
+    public function create()
+    {
+        // 食材一覧を取得
+        $ingredients = Ingredient::select('id', 'name', 'ingredient_category_id')
+            ->orderBy('ingredient_category_id')
+            ->orderBy('name')
+            ->get();
+
+        // 食材カテゴリ一覧を取得
+        $ingredientCategories = IngredientCategory::select('id', 'name')
+            ->orderBy('id')
+            ->get();
+
+        // レシピカテゴリ一覧を取得
+        $recipeCategories = RecipeCategory::select('id', 'recipe_category_name')
+            ->orderBy('id')
+            ->get();
+
+        return Inertia::render('Recipes/Create', [
+            'ingredients' => $ingredients,
+            'ingredientCategories' => $ingredientCategories,
+            'recipeCategories' => $recipeCategories,
+        ]);
+    }
+
+    /**
+     * レシピを保存
+     */
+    public function store(Request $request)
+    {
+        // バリデーション
+        $validated = $request->validate([
+            'recipe_name' => 'required|string|max:255',
+            'recipe_category_id' => 'required|exists:recipe_categories,id',
+            'serving_size' => 'required|integer|min:1|max:6',
+            'recommended_points' => 'nullable|string',
+            'recipe_image' => 'nullable|image|max:10240', // 最大10MB
+            'publish_flg' => 'required|boolean',
+            'ingredients' => 'required|array|min:1',
+            'ingredients.*.ingredient_id' => 'required|exists:ingredients,id',
+            'ingredients.*.quantity' => 'required|string',
+            'ingredients.*.unit' => 'required|string',
+            'instructions' => 'required|array|min:1',
+            'instructions.*.instruction_no' => 'required|integer',
+            'instructions.*.description' => 'required|string',
+            'instructions.*.image' => 'nullable|image|max:10240',
+        ]);
+
+        $userId = Auth::id();
+
+        DB::beginTransaction();
+
+        try {
+            // レシピ画像の保存
+            $recipeImageUrl = null;
+            if ($request->hasFile('recipe_image')) {
+                $path = $request->file('recipe_image')->store('recipes', 'public');
+                $recipeImageUrl = Storage::url($path);
+            }
+
+            // レシピを作成
+            $recipe = Recipe::create([
+                'recipe_name' => $validated['recipe_name'],
+                'recipe_category_id' => $validated['recipe_category_id'],
+                'recipe_image_url' => $recipeImageUrl,
+                'serving_size' => $validated['serving_size'],
+                'recommended_points' => $validated['recommended_points'],
+                'publish_flg' => $validated['publish_flg'],
+                'user_id' => $userId,
+            ]);
+
+            // 材料を保存
+            foreach ($validated['ingredients'] as $ingredient) {
+                RecipeIngredient::create([
+                    'recipe_id' => $recipe->id,
+                    'ingredients_id' => $ingredient['ingredient_id'],
+                    'quantity' => $ingredient['quantity'],
+                    'unit' => $ingredient['unit'],
+                ]);
+            }
+
+            // 調理手順を保存
+            foreach ($validated['instructions'] as $instruction) {
+                $instructionImageUrl = null;
+
+                // 手順画像の保存
+                if ($request->hasFile("instructions.{$instruction['instruction_no']}.image")) {
+                    $path = $request->file("instructions.{$instruction['instruction_no']}.image")
+                        ->store('instructions', 'public');
+                    $instructionImageUrl = Storage::url($path);
+                }
+
+                RecipeInstruction::create([
+                    'recipe_id' => $recipe->id,
+                    'instruction_no' => $instruction['instruction_no'],
+                    'description' => $instruction['description'],
+                    'instruction_image_url' => $instructionImageUrl,
+                    'user_id' => $userId,
+                ]);
+            }
+
+            DB::commit();
+
+            return redirect()->route('recipes.index')->with('success', 'レシピを作成しました');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return redirect()->back()->withErrors(['error' => 'レシピの作成に失敗しました: ' . $e->getMessage()]);
+        }
     }
 
     /**

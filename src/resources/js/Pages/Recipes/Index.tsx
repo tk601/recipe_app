@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { Head, router } from '@inertiajs/react';
-import { Heart, ArrowLeft, Search } from 'lucide-react';
+import { Heart, ArrowLeft, Search, Plus } from 'lucide-react';
 import Footer from '@/Components/Mobile/Footer';
 
 interface RecipeCategory {
@@ -461,6 +461,16 @@ export default function RecipesIndex({ categories, recipes, selectedCategoryId, 
                         )}
                 </main>
             )}
+
+            {/* レシピ作成ボタン（浮動） */}
+            <button
+                onClick={() => router.visit(route('recipes.create'))}
+                className="fixed bottom-24 right-4 px-4 py-3 rounded-full shadow-lg flex items-center gap-2 transition-all duration-200 hover:shadow-xl active:scale-95 z-20"
+                style={{ backgroundColor: 'var(--main-color)' }}
+            >
+                <span className="text-white font-bold text-sm">レシピ作成</span>
+                <Plus className="w-4 h-4 text-white" />
+            </button>
 
             {/* フッター */}
             <Footer currentPage="recipe" />
