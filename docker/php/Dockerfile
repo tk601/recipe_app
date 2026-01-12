@@ -26,6 +26,12 @@ RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 # PHP拡張機能のインストール
 RUN docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd zip
 
+# PHPのアップロード設定を5MBに制限
+RUN echo "upload_max_filesize = 5M" >> /usr/local/etc/php/conf.d/uploads.ini \
+    && echo "post_max_size = 5M" >> /usr/local/etc/php/conf.d/uploads.ini \
+    && echo "max_execution_time = 300" >> /usr/local/etc/php/conf.d/uploads.ini \
+    && echo "max_input_time = 300" >> /usr/local/etc/php/conf.d/uploads.ini
+
 # Composerの取得
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 

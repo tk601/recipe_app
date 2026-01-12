@@ -254,6 +254,13 @@ export default function RecipeCreate({ ingredients, ingredientCategories, recipe
 
         // FormDataを作成
         const formData = new FormData();
+
+        // CSRFトークンを追加
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+        if (csrfToken) {
+            formData.append('_token', csrfToken);
+        }
+
         formData.append('recipe_name', data.recipe_name);
         formData.append('recipe_category_id', data.recipe_category_id);
         formData.append('serving_size', data.serving_size);
@@ -280,6 +287,7 @@ export default function RecipeCreate({ ingredients, ingredientCategories, recipe
             }
         });
 
+        // 保存処理
         router.post(route('recipes.store'), formData, {
             forceFormData: true,
             onSuccess: () => {

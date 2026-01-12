@@ -14,6 +14,7 @@ use Inertia\Inertia;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Log;
 
 class RecipeController extends Controller
 {
@@ -279,7 +280,7 @@ class RecipeController extends Controller
             'recipe_category_id' => 'required|exists:recipe_categories,id',
             'serving_size' => 'required|integer|min:1|max:6',
             'recommended_points' => 'nullable|string',
-            'recipe_image' => 'nullable|image|max:10240', // 最大10MB
+            'recipe_image' => 'nullable|image|max:5120', // 最大5MB（5120KB）
             'publish_flg' => 'required|boolean',
             'ingredients' => 'required|array|min:1',
             'ingredients.*.ingredient_id' => 'required|exists:ingredients,id',
@@ -288,7 +289,7 @@ class RecipeController extends Controller
             'instructions' => 'required|array|min:1',
             'instructions.*.instruction_no' => 'required|integer',
             'instructions.*.description' => 'required|string',
-            'instructions.*.image' => 'nullable|image|max:10240',
+            'instructions.*.image' => 'nullable|image|max:5120', // 最大5MB（5120KB）
         ]);
 
         $userId = Auth::id();
@@ -345,9 +346,11 @@ class RecipeController extends Controller
             }
 
             DB::commit();
+            Log::info("保存完了");
 
             return redirect()->route('recipes.index')->with('success', 'レシピを作成しました');
         } catch (\Exception $e) {
+            Log::error("保存エラー: " . $e->getMessage());
             DB::rollBack();
             return redirect()->back()->withErrors(['error' => 'レシピの作成に失敗しました: ' . $e->getMessage()]);
         }

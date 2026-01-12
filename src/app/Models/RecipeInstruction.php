@@ -10,6 +10,13 @@ class RecipeInstruction extends Model
 {
     protected $table = 'recipe_instructions';
 
+    // タイムスタンプを有効にする
+    public $timestamps = true;
+
+    // created_atのみ使用（updated_atは使用しない）
+    public const CREATED_AT = 'created_at';
+    public const UPDATED_AT = null;
+
     protected $fillable = [
         'recipe_id',
         'instruction_no',

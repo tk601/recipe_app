@@ -8,7 +8,14 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 // レシピ食材
 class RecipeIngredient extends Model
 {
-    protected $table = 'recipe_ingredients'; 
+    protected $table = 'recipe_ingredients';
+
+    // タイムスタンプを有効にする
+    public $timestamps = true;
+
+    // created_atのみ使用（updated_atは使用しない）
+    public const CREATED_AT = 'created_at';
+    public const UPDATED_AT = null;
 
     protected $fillable = [
         'recipe_id',
