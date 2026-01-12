@@ -17,7 +17,7 @@ const Footer = ({ currentPage = 'refrigerators' }: FooterProps) => {
             <div className="flex justify-around items-center max-w-7xl mx-auto">
                 {/* レシピ */}
                 <Link
-                    href={route('dashboard')}
+                    href={route('recipes.index')}
                     className={`flex flex-col items-center p-3 w-full transition-colors ${
                         isActive('recipe') ? '' : 'opacity-60'
                     }`}
