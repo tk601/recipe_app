@@ -41,6 +41,7 @@ Route::middleware('auth')->group(function () {
 
     // レシピ管理のルート
     Route::get('/recipes', [RecipeController::class, 'index'])->name('recipes.index');
+    Route::get('/recipes/{id}', [RecipeController::class, 'show'])->name('recipes.show');
 
     // レシピのいいねを切り替え
     Route::post('/recipes/toggle-like', [RecipeController::class, 'toggleLike'])

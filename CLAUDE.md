@@ -55,7 +55,7 @@ new_recipe_app/
 │   │       ├── Ingredient.php
 │   │       ├── IngredientCategory.php
 │   │       ├── RecipeIngredient.php
-│   │       ├── Instruction.php
+│   │       ├── RecipeInstruction.php
 │   │       ├── RecipeCategory.php
 │   │       ├── Refrigerator.php
 │   │       ├── ShoppingList.php
@@ -105,13 +105,13 @@ new_recipe_app/
 ### 主要モデルとリレーション
 - **User**: ユーザー
 - **Recipe**: レシピ
-  - hasMany: RecipeIngredient, Instruction, Good, SharedRecipe
+  - hasMany: RecipeIngredient, RecipeInstruction, Good, SharedRecipe
   - belongsTo: RecipeCategory
 - **Ingredient**: 材料マスタ
   - belongsTo: IngredientCategory
 - **IngredientCategory**: 材料カテゴリ
 - **RecipeIngredient**: レシピと材料の中間テーブル
-- **Instruction**: レシピの手順
+- **RecipeInstruction**: レシピの手順
 - **Refrigerator**: ユーザーの冷蔵庫在庫
 - **ShoppingList**: 買い物リスト
 - **Good**: レシピへのいいね

@@ -30,7 +30,7 @@ interface Props {
 
 export default function RecipesIndex({ categories, recipes, selectedCategoryId, favoriteRecipes }: Props) {
     // フィルターの状態管理: 'all' | 'cookable'
-    const [recipeFilter, setRecipeFilter] = useState<'all' | 'cookable'>('all');
+    const [recipeFilter, setRecipeFilter] = useState<'cookable' | 'all'>('cookable');
     // 検索キーワードの状態管理
     const [searchQuery, setSearchQuery] = useState('');
     // カテゴリの表示数管理
@@ -61,6 +61,13 @@ export default function RecipesIndex({ categories, recipes, selectedCategoryId, 
             preserveState: false,
             replace: true
         });
+    };
+
+    /**
+     * レシピ詳細画面に遷移
+     */
+    const handleRecipeClick = (recipeId: number) => {
+        router.visit(route('recipes.show', recipeId));
     };
 
     /**
@@ -191,18 +198,6 @@ export default function RecipesIndex({ categories, recipes, selectedCategoryId, 
                         {/* フィルターボタン */}
                         <div className="flex space-x-2 pb-3 px-0">
                             <button
-                                onClick={() => setRecipeFilter('all')}
-                                className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
-                                    recipeFilter === 'all' ? '' : 'opacity-60'
-                                }`}
-                                style={{
-                                    backgroundColor: recipeFilter === 'all' ? 'var(--main-color)' : 'var(--light-gray)',
-                                    color: recipeFilter === 'all' ? 'white' : 'var(--dark-gray)'
-                                }}
-                            >
-                                全て表示
-                            </button>
-                            <button
                                 onClick={() => setRecipeFilter('cookable')}
                                 className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
                                     recipeFilter === 'cookable' ? '' : 'opacity-60'
@@ -213,6 +208,18 @@ export default function RecipesIndex({ categories, recipes, selectedCategoryId, 
                                 }}
                             >
                                 作れる料理
+                            </button>
+                            <button
+                                onClick={() => setRecipeFilter('all')}
+                                className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
+                                    recipeFilter === 'all' ? '' : 'opacity-60'
+                                }`}
+                                style={{
+                                    backgroundColor: recipeFilter === 'all' ? 'var(--main-color)' : 'var(--light-gray)',
+                                    color: recipeFilter === 'all' ? 'white' : 'var(--dark-gray)'
+                                }}
+                            >
+                                全て表示
                             </button>
                         </div>
                     </div>
@@ -273,18 +280,19 @@ export default function RecipesIndex({ categories, recipes, selectedCategoryId, 
                     )}
 
                     {/* お気に入り一覧セクション */}
-                    {favoriteRecipes.length > 0 && (
-                        <div className="mt-8">
-                            <h2
-                                className="text-lg font-bold mb-4"
-                                style={{ color: 'var(--black)' }}
-                            >
-                                お気に入り
-                            </h2>
+                    <div className="mt-8">
+                        <h2
+                            className="text-lg font-bold mb-4"
+                            style={{ color: 'var(--black)' }}
+                        >
+                            お気に入り
+                        </h2>
+                        {favoriteRecipes.length > 0 ? (
                             <div className="grid grid-cols-2 gap-4">
                                 {favoriteRecipes.map((recipe) => (
                                     <div
                                         key={recipe.recipe_id}
+                                        onClick={() => handleRecipeClick(recipe.recipe_id)}
                                         className="bg-white rounded-lg shadow-sm border overflow-hidden transition-all duration-200 active:scale-95 cursor-pointer"
                                         style={{ borderColor: 'var(--gray)' }}
                                     >
@@ -352,8 +360,17 @@ export default function RecipesIndex({ categories, recipes, selectedCategoryId, 
                                     </div>
                                 ))}
                             </div>
-                        </div>
-                    )}
+                        ) : (
+                            <div className="text-center py-12">
+                                <p
+                                    className="text-sm"
+                                    style={{ color: 'var(--dark-gray)' }}
+                                >
+                                    いいねをしたレシピが表示されます！
+                                </p>
+                            </div>
+                        )}
+                    </div>
                 </main>
             )}
 
@@ -365,6 +382,7 @@ export default function RecipesIndex({ categories, recipes, selectedCategoryId, 
                                 {filteredRecipes.map((recipe) => (
                                     <div
                                         key={recipe.recipe_id}
+                                        onClick={() => handleRecipeClick(recipe.recipe_id)}
                                         className="bg-white rounded-lg shadow-sm border overflow-hidden transition-all duration-200 active:scale-95 cursor-pointer"
                                         style={{ borderColor: 'var(--gray)' }}
                                     >

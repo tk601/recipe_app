@@ -6,6 +6,7 @@ use App\Models\Recipe;
 use App\Models\RecipeCategory;
 use App\Models\RecipeIngredient;
 use App\Models\Refrigerator;
+use App\Models\RecipeInstruction;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Auth;
@@ -167,6 +168,73 @@ class RecipeController extends Controller
 
                 return $recipe;
             });
+    }
+
+    /**
+     * レシピ詳細を表示
+     */
+    public function show($id)
+    {
+        $userId = Auth::id();
+
+        // レシピの基本情報を取得
+        $recipe = Recipe::select(
+                'recipes.id',
+                'recipes.recipe_name',
+                'recipes.recipe_image_url',
+                'recipes.recipe_category_id',
+                'recipes.serving_size',
+                'recipes.recommended_points',
+                'recipe_categories.recipe_category_name'
+            )
+            ->join('recipe_categories', 'recipes.recipe_category_id', '=', 'recipe_categories.id')
+            ->where('recipes.id', $id)
+            ->where('recipes.publish_flg', 1)
+            ->firstOrFail();
+
+        // レシピの材料一覧を取得
+        $ingredients = RecipeIngredient::where('recipe_ingredients.recipe_id', $id)
+            ->join('ingredients', 'recipe_ingredients.ingredients_id', '=', 'ingredients.id')
+            ->select(
+                'ingredients.id',
+                'ingredients.name as ingredient_name',
+                'recipe_ingredients.quantity',
+                'recipe_ingredients.unit'
+            )
+            ->get();
+
+        // 調理手順を取得
+        $instructions = RecipeInstruction::where('recipe_id', $id)
+            ->orderBy('instruction_no', 'asc')
+            ->select('instruction_no', 'description', 'instruction_image_url')
+            ->get();
+
+        // いいね数を取得
+        $likesCount = DB::table('goods')
+            ->where('recipe_id', $id)
+            ->count();
+
+        // このユーザーがいいねしているかチェック
+        $isLiked = DB::table('goods')
+            ->where('recipe_id', $id)
+            ->where('user_id', $userId)
+            ->exists();
+
+        return Inertia::render('Recipes/Show', [
+            'recipe' => [
+                'id' => $recipe->id,
+                'recipe_name' => $recipe->recipe_name,
+                'recipe_image_url' => $recipe->recipe_image_url,
+                'recipe_category_id' => $recipe->recipe_category_id,
+                'recipe_category_name' => $recipe->recipe_category_name,
+                'serving_size' => $recipe->serving_size,
+                'recommended_points' => $recipe->recommended_points,
+                'likes_count' => $likesCount,
+                'is_liked' => $isLiked,
+            ],
+            'ingredients' => $ingredients,
+            'instructions' => $instructions,
+        ]);
     }
 
     /**

@@ -6,13 +6,14 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 // 調理手順
-class Instruction extends Model
+class RecipeInstruction extends Model
 {
-    protected $table = 'instructions'; 
+    protected $table = 'recipe_instructions';
 
     protected $fillable = [
         'recipe_id',
         'instruction_no',
+        'description',
         'instruction_image_url',
         'user_id',
         'created_at'

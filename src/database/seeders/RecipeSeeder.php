@@ -203,6 +203,158 @@ class RecipeSeeder extends Seeder
                 'publish_flg' => 1,
                 'user_id' => $userId,
             ],
+
+            // エスニックカテゴリ (category_id: 5)
+            [
+                'recipe_name' => 'ガパオライス',
+                'recipe_category_id' => 5,
+                'recipe_image_url' => 'https://images.unsplash.com/photo-1562565652-a0d8f0c59eb4?w=400',
+                'serving_size' => 2,
+                'recommended_points' => 'タイの定番料理！バジルの香りが食欲をそそる',
+                'publish_flg' => 1,
+                'user_id' => $userId,
+            ],
+            [
+                'recipe_name' => 'トムヤムクン',
+                'recipe_category_id' => 5,
+                'recipe_image_url' => 'https://images.unsplash.com/photo-1548943487-a2e4e43b4853?w=400',
+                'serving_size' => 3,
+                'recommended_points' => '酸味と辛みのバランスが最高',
+                'publish_flg' => 1,
+                'user_id' => $userId,
+            ],
+            [
+                'recipe_name' => 'グリーンカレー',
+                'recipe_category_id' => 5,
+                'recipe_image_url' => 'https://images.unsplash.com/photo-1455619452474-d2be8b1e70cd?w=400',
+                'serving_size' => 3,
+                'recommended_points' => 'スパイシーでココナッツミルクがまろやか',
+                'publish_flg' => 1,
+                'user_id' => $userId,
+            ],
+            [
+                'recipe_name' => 'フォー',
+                'recipe_category_id' => 5,
+                'recipe_image_url' => 'https://images.unsplash.com/photo-1591814468924-caf88d1232e1?w=400',
+                'serving_size' => 2,
+                'recommended_points' => 'ベトナムの米麺スープ。優しい味わい',
+                'publish_flg' => 1,
+                'user_id' => $userId,
+            ],
+
+            // スイーツカテゴリ (category_id: 6)
+            [
+                'recipe_name' => 'チーズケーキ',
+                'recipe_category_id' => 6,
+                'recipe_image_url' => 'https://images.unsplash.com/photo-1533134486753-c833f0ed4866?w=400',
+                'serving_size' => 6,
+                'recommended_points' => '濃厚でなめらか！おもてなしにも',
+                'publish_flg' => 1,
+                'user_id' => $userId,
+            ],
+            [
+                'recipe_name' => 'パンケーキ',
+                'recipe_category_id' => 6,
+                'recipe_image_url' => 'https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?w=400',
+                'serving_size' => 3,
+                'recommended_points' => 'ふわふわでボリューム満点',
+                'publish_flg' => 1,
+                'user_id' => $userId,
+            ],
+            [
+                'recipe_name' => 'ティラミス',
+                'recipe_category_id' => 6,
+                'recipe_image_url' => 'https://images.unsplash.com/photo-1571877227200-a0d98ea607e9?w=400',
+                'serving_size' => 4,
+                'recommended_points' => 'イタリアの定番デザート',
+                'publish_flg' => 1,
+                'user_id' => $userId,
+            ],
+            [
+                'recipe_name' => 'プリン',
+                'recipe_category_id' => 6,
+                'recipe_image_url' => 'https://images.unsplash.com/photo-1586039001882-7fdd39c149dd?w=400',
+                'serving_size' => 4,
+                'recommended_points' => '昔ながらの固めプリン',
+                'publish_flg' => 1,
+                'user_id' => $userId,
+            ],
+
+            // 鍋・汁物カテゴリ (category_id: 7)
+            [
+                'recipe_name' => 'すき焼き',
+                'recipe_category_id' => 7,
+                'recipe_image_url' => 'https://images.unsplash.com/photo-1582878826629-29b7ad1cdc43?w=400',
+                'serving_size' => 4,
+                'recommended_points' => '甘辛い割り下が絶品！',
+                'publish_flg' => 1,
+                'user_id' => $userId,
+            ],
+            [
+                'recipe_name' => '豚汁',
+                'recipe_category_id' => 7,
+                'recipe_image_url' => 'https://images.unsplash.com/photo-1606491048710-dc3e66b10d15?w=400',
+                'serving_size' => 4,
+                'recommended_points' => '具だくさんで栄養満点',
+                'publish_flg' => 1,
+                'user_id' => $userId,
+            ],
+            [
+                'recipe_name' => 'キムチ鍋',
+                'recipe_category_id' => 7,
+                'recipe_image_url' => 'https://images.unsplash.com/photo-1605908502724-9093a79a1b39?w=400',
+                'serving_size' => 3,
+                'recommended_points' => 'ピリ辛で体が温まる',
+                'publish_flg' => 1,
+                'user_id' => $userId,
+            ],
+            [
+                'recipe_name' => 'クリームシチュー',
+                'recipe_category_id' => 7,
+                'recipe_image_url' => 'https://images.unsplash.com/photo-1610415017090-1c5c890c3701?w=400',
+                'serving_size' => 4,
+                'recommended_points' => 'まろやかで子どもも大好き',
+                'publish_flg' => 1,
+                'user_id' => $userId,
+            ],
+
+            // サラダ・副菜カテゴリ (category_id: 8)
+            [
+                'recipe_name' => 'シーザーサラダ',
+                'recipe_category_id' => 8,
+                'recipe_image_url' => 'https://images.unsplash.com/photo-1546793665-c74683f339c1?w=400',
+                'serving_size' => 2,
+                'recommended_points' => 'クリーミーなドレッシングが決め手',
+                'publish_flg' => 1,
+                'user_id' => $userId,
+            ],
+            [
+                'recipe_name' => 'ポテトサラダ',
+                'recipe_category_id' => 8,
+                'recipe_image_url' => 'https://images.unsplash.com/photo-1623428187969-5da2dcea5ebf?w=400',
+                'serving_size' => 3,
+                'recommended_points' => '定番の家庭の味',
+                'publish_flg' => 1,
+                'user_id' => $userId,
+            ],
+            [
+                'recipe_name' => 'ほうれん草のおひたし',
+                'recipe_category_id' => 8,
+                'recipe_image_url' => 'https://images.unsplash.com/photo-1604908815808-2478d99e4fd4?w=400',
+                'serving_size' => 2,
+                'recommended_points' => 'シンプルで栄養満点',
+                'publish_flg' => 1,
+                'user_id' => $userId,
+            ],
+            [
+                'recipe_name' => 'きんぴらごぼう',
+                'recipe_category_id' => 8,
+                'recipe_image_url' => 'https://images.unsplash.com/photo-1606491048710-dc3e66b10d15?w=400',
+                'serving_size' => 3,
+                'recommended_points' => '甘辛い味付けでご飯が進む',
+                'publish_flg' => 1,
+                'user_id' => $userId,
+            ],
         ];
 
         foreach ($recipes as $recipe) {
@@ -346,6 +498,92 @@ class RecipeSeeder extends Seeder
             $recipeIds['ボンゴレビアンコ'] ?? null => [
                 ['ingredient' => 'パスタ', 'quantity' => 200, 'unit' => 'g'],
                 ['ingredient' => 'あさり', 'quantity' => 300, 'unit' => 'g'],
+            ],
+            // ガパオライス
+            $recipeIds['ガパオライス'] ?? null => [
+                ['ingredient' => '鶏肉', 'quantity' => 200, 'unit' => 'g'],
+                ['ingredient' => 'ピーマン', 'quantity' => 2, 'unit' => '個'],
+                ['ingredient' => '卵', 'quantity' => 2, 'unit' => '個'],
+            ],
+            // トムヤムクン
+            $recipeIds['トムヤムクン'] ?? null => [
+                ['ingredient' => 'エビ', 'quantity' => 10, 'unit' => '尾'],
+                ['ingredient' => 'トマト', 'quantity' => 2, 'unit' => '個'],
+            ],
+            // グリーンカレー
+            $recipeIds['グリーンカレー'] ?? null => [
+                ['ingredient' => '鶏肉', 'quantity' => 250, 'unit' => 'g'],
+                ['ingredient' => 'なす', 'quantity' => 2, 'unit' => '本'],
+            ],
+            // フォー
+            $recipeIds['フォー'] ?? null => [
+                ['ingredient' => '牛肉', 'quantity' => 150, 'unit' => 'g'],
+                ['ingredient' => 'もやし', 'quantity' => 100, 'unit' => 'g'],
+            ],
+            // チーズケーキ
+            $recipeIds['チーズケーキ'] ?? null => [
+                ['ingredient' => 'チーズ', 'quantity' => 200, 'unit' => 'g'],
+                ['ingredient' => '卵', 'quantity' => 3, 'unit' => '個'],
+            ],
+            // パンケーキ
+            $recipeIds['パンケーキ'] ?? null => [
+                ['ingredient' => '卵', 'quantity' => 2, 'unit' => '個'],
+                ['ingredient' => '牛乳', 'quantity' => 200, 'unit' => 'ml'],
+            ],
+            // ティラミス
+            $recipeIds['ティラミス'] ?? null => [
+                ['ingredient' => 'チーズ', 'quantity' => 250, 'unit' => 'g'],
+                ['ingredient' => '卵', 'quantity' => 3, 'unit' => '個'],
+            ],
+            // プリン
+            $recipeIds['プリン'] ?? null => [
+                ['ingredient' => '卵', 'quantity' => 3, 'unit' => '個'],
+                ['ingredient' => '牛乳', 'quantity' => 400, 'unit' => 'ml'],
+            ],
+            // すき焼き
+            $recipeIds['すき焼き'] ?? null => [
+                ['ingredient' => '牛肉', 'quantity' => 400, 'unit' => 'g'],
+                ['ingredient' => '豆腐', 'quantity' => 1, 'unit' => '丁'],
+                ['ingredient' => 'ねぎ', 'quantity' => 2, 'unit' => '本'],
+            ],
+            // 豚汁
+            $recipeIds['豚汁'] ?? null => [
+                ['ingredient' => '豚肉', 'quantity' => 200, 'unit' => 'g'],
+                ['ingredient' => 'にんじん', 'quantity' => 1, 'unit' => '本'],
+                ['ingredient' => 'じゃがいも', 'quantity' => 2, 'unit' => '個'],
+            ],
+            // キムチ鍋
+            $recipeIds['キムチ鍋'] ?? null => [
+                ['ingredient' => '豚肉', 'quantity' => 250, 'unit' => 'g'],
+                ['ingredient' => 'キャベツ', 'quantity' => 300, 'unit' => 'g'],
+                ['ingredient' => '豆腐', 'quantity' => 1, 'unit' => '丁'],
+            ],
+            // クリームシチュー
+            $recipeIds['クリームシチュー'] ?? null => [
+                ['ingredient' => '鶏肉', 'quantity' => 200, 'unit' => 'g'],
+                ['ingredient' => 'じゃがいも', 'quantity' => 3, 'unit' => '個'],
+                ['ingredient' => 'にんじん', 'quantity' => 1, 'unit' => '本'],
+                ['ingredient' => '牛乳', 'quantity' => 400, 'unit' => 'ml'],
+            ],
+            // シーザーサラダ
+            $recipeIds['シーザーサラダ'] ?? null => [
+                ['ingredient' => 'レタス', 'quantity' => 1, 'unit' => '個'],
+                ['ingredient' => 'チーズ', 'quantity' => 50, 'unit' => 'g'],
+            ],
+            // ポテトサラダ
+            $recipeIds['ポテトサラダ'] ?? null => [
+                ['ingredient' => 'じゃがいも', 'quantity' => 4, 'unit' => '個'],
+                ['ingredient' => 'にんじん', 'quantity' => 1, 'unit' => '本'],
+                ['ingredient' => '卵', 'quantity' => 2, 'unit' => '個'],
+            ],
+            // ほうれん草のおひたし
+            $recipeIds['ほうれん草のおひたし'] ?? null => [
+                ['ingredient' => 'ほうれん草', 'quantity' => 1, 'unit' => '束'],
+            ],
+            // きんぴらごぼう
+            $recipeIds['きんぴらごぼう'] ?? null => [
+                ['ingredient' => 'ごぼう', 'quantity' => 1, 'unit' => '本'],
+                ['ingredient' => 'にんじん', 'quantity' => 1, 'unit' => '本'],
             ],
         ];
 

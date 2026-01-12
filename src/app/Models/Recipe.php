@@ -30,7 +30,7 @@ class Recipe extends Model
 
     // public function instructions(): HasMany
     // {
-    //     return $this->hasMany(Instruction::class);
+    //     return $this->hasMany(RecipeInstruction::class);
     // }
 
     // public function goods(): HasMany
