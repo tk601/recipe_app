@@ -13,7 +13,7 @@ interface Ingredient {
 // 食材カテゴリの型定義
 interface IngredientCategory {
     id: number;
-    category_name: string;
+    name: string;
 }
 
 // 選択された食材の型定義
@@ -32,6 +32,19 @@ interface Instruction {
     image_preview: string | null;
 }
 
+// フォームデータの型定義
+interface RecipeFormData {
+    recipe_name: string;
+    recipe_category_id: string;
+    serving_size: string;
+    recommended_points: string;
+    recipe_image: File | null;
+    ingredients: SelectedIngredient[];
+    instructions: Instruction[];
+    publish_flg: boolean;
+    [key: string]: any; // Inertia.jsのuseFormが要求するインデックスシグネチャ
+}
+
 interface Props {
     ingredients: Ingredient[];
     ingredientCategories: IngredientCategory[];
@@ -40,14 +53,14 @@ interface Props {
 
 export default function RecipeCreate({ ingredients, ingredientCategories, recipeCategories }: Props) {
     // フォームデータの管理
-    const { data, setData, post, processing, errors } = useForm({
+    const { data, setData, post, processing, errors } = useForm<RecipeFormData>({
         recipe_name: '',
         recipe_category_id: '',
         serving_size: '2',
         recommended_points: '',
-        recipe_image: null as File | null,
-        ingredients: [] as SelectedIngredient[],
-        instructions: [] as Instruction[],
+        recipe_image: null,
+        ingredients: [],
+        instructions: [],
         publish_flg: false,
     });
 
@@ -570,8 +583,8 @@ export default function RecipeCreate({ ingredients, ingredientCategories, recipe
 
             {/* 材料選択モーダル */}
             {showIngredientModal && (
-                <div className="fixed inset-0 bg-black/50 z-50 flex items-end">
-                    <div className="bg-white w-full max-h-[80vh] rounded-t-2xl overflow-hidden">
+                <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+                    <div className="bg-white w-full max-w-2xl max-h-[80vh] rounded-2xl overflow-hidden">
                         {/* モーダルヘッダー */}
                         <div className="flex justify-between items-center p-4 border-b" style={{ borderColor: 'var(--gray)' }}>
                             <h3 className="font-bold" style={{ color: 'var(--black)' }}>材料を選択</h3>
