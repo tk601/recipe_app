@@ -1,6 +1,6 @@
-import React, { useState, useMemo } from 'react';
-import { Head, router } from '@inertiajs/react';
-import { Heart, ArrowLeft, Search, Plus } from 'lucide-react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { Head, router, usePage } from '@inertiajs/react';
+import { Heart, ArrowLeft, Search, Plus, X } from 'lucide-react';
 import Footer from '@/Components/Mobile/Footer';
 
 interface RecipeCategory {
@@ -28,13 +28,44 @@ interface Props {
     favoriteRecipes: Recipe[];
 }
 
+interface FlashMessages {
+    success?: string;
+    error?: string;
+}
+
+interface PageProps extends Props {
+    auth: {
+        user: any;
+    };
+    flash?: FlashMessages;
+    [key: string]: any;
+}
+
 export default function RecipesIndex({ categories, recipes, selectedCategoryId, favoriteRecipes }: Props) {
+    // フラッシュメッセージを取得
+    const page = usePage<PageProps>();
+    const flash = page.props.flash;
+
     // フィルターの状態管理: 'all' | 'cookable'
     const [recipeFilter, setRecipeFilter] = useState<'cookable' | 'all'>('cookable');
     // 検索キーワードの状態管理
     const [searchQuery, setSearchQuery] = useState('');
     // カテゴリの表示数管理
     const [showAllCategories, setShowAllCategories] = useState(false);
+    // フラッシュメッセージの表示状態
+    const [showFlash, setShowFlash] = useState(false);
+
+    // フラッシュメッセージが存在する場合に表示
+    useEffect(() => {
+        if (flash?.success || flash?.error) {
+            setShowFlash(true);
+            // 3秒後に自動的に非表示
+            const timer = setTimeout(() => {
+                setShowFlash(false);
+            }, 3000);
+            return () => clearTimeout(timer);
+        }
+    }, [flash]);
 
     // 現在選択中のカテゴリ情報を取得
     const selectedCategory = useMemo(() => {
@@ -126,6 +157,25 @@ export default function RecipesIndex({ categories, recipes, selectedCategoryId, 
             style={{ backgroundColor: 'var(--base-color)' }}
         >
             <Head title="レシピ - ごはんどき" />
+
+            {/* フラッシュメッセージ */}
+            {showFlash && (flash?.success || flash?.error) && (
+                <div
+                    className="fixed top-4 left-4 right-4 z-50 px-4 py-3 rounded-lg shadow-lg flex items-center justify-between animate-fade-in"
+                    style={{
+                        backgroundColor: flash?.success ? 'var(--main-color)' : '#ef4444',
+                        color: 'white'
+                    }}
+                >
+                    <span className="font-medium">{flash?.success || flash?.error}</span>
+                    <button
+                        onClick={() => setShowFlash(false)}
+                        className="ml-4 p-1 hover:bg-white/20 rounded transition-colors"
+                    >
+                        <X className="w-4 h-4" />
+                    </button>
+                </div>
+            )}
 
             {/* ヘッダー：カテゴリ未選択時 */}
             {!selectedCategoryId && (

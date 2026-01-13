@@ -250,50 +250,12 @@ export default function RecipeCreate({ ingredients, ingredientCategories, recipe
      * 公開設定を決定して保存
      */
     const handleSubmit = (publish: boolean) => {
+        // 公開フラグを設定
         setData('publish_flg', publish);
 
-        // FormDataを作成
-        const formData = new FormData();
-
-        // CSRFトークンを追加
-        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-        if (csrfToken) {
-            formData.append('_token', csrfToken);
-        }
-
-        formData.append('recipe_name', data.recipe_name);
-        formData.append('recipe_category_id', data.recipe_category_id);
-        formData.append('serving_size', data.serving_size);
-        formData.append('recommended_points', data.recommended_points);
-        formData.append('publish_flg', publish ? '1' : '0');
-
-        if (data.recipe_image) {
-            formData.append('recipe_image', data.recipe_image);
-        }
-
-        // 食材データ
-        data.ingredients.forEach((ing, index) => {
-            formData.append(`ingredients[${index}][ingredient_id]`, ing.ingredient_id.toString());
-            formData.append(`ingredients[${index}][quantity]`, ing.quantity);
-            formData.append(`ingredients[${index}][unit]`, ing.unit);
-        });
-
-        // 手順データ
-        data.instructions.forEach((inst, index) => {
-            formData.append(`instructions[${index}][instruction_no]`, inst.instruction_no.toString());
-            formData.append(`instructions[${index}][description]`, inst.description);
-            if (inst.image) {
-                formData.append(`instructions[${index}][image]`, inst.image);
-            }
-        });
-
-        // 保存処理
-        router.post(route('recipes.store'), formData, {
-            forceFormData: true,
-            onSuccess: () => {
-                router.visit(route('recipes.index'));
-            },
-        });
+        // useFormのpostメソッドを使用することでCSRFトークンが自動的に処理される
+        // コントローラーからのリダイレクトが自動的に処理されるため、onSuccessでのリダイレクトは不要
+        post(route('recipes.store'));
     };
 
     // カテゴリでフィルタリングされた食材

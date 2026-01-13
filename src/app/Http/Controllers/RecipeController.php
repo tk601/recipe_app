@@ -346,7 +346,6 @@ class RecipeController extends Controller
             }
 
             DB::commit();
-            Log::info("保存完了");
 
             return redirect()->route('recipes.index')->with('success', 'レシピを作成しました');
         } catch (\Exception $e) {
