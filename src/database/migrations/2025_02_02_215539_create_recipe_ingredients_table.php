@@ -18,6 +18,7 @@ return new class extends Migration
             $table->unsignedBigInteger('ingredients_id')->comment('材料ID');
             $table->unsignedInteger('quantity')->comment('必要数');
             $table->string('unit', 50)->comment('単位');
+            $table->timestamp('created_at')->nullable()->comment('作成日時');
         });
     }
 

@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\IngredientController;
+use App\Http\Controllers\RecipeController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -37,6 +38,16 @@ Route::middleware('auth')->group(function () {
     // 冷蔵庫の在庫状態を切り替え
     Route::post('/ingredients/toggle-refrigerator', [IngredientController::class, 'toggleRefrigerator'])
         ->name('ingredients.toggle-refrigerator');
+
+    // レシピ管理のルート
+    Route::get('/recipes', [RecipeController::class, 'index'])->name('recipes.index');
+    Route::get('/recipes/create', [RecipeController::class, 'create'])->name('recipes.create');
+    Route::post('/recipes', [RecipeController::class, 'store'])->name('recipes.store');
+    Route::get('/recipes/{id}', [RecipeController::class, 'show'])->name('recipes.show');
+
+    // レシピのいいねを切り替え
+    Route::post('/recipes/toggle-like', [RecipeController::class, 'toggleLike'])
+        ->name('recipes.toggle-like');
 
 });
 require __DIR__.'/auth.php';

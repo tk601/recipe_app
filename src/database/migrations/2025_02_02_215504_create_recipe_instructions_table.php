@@ -12,11 +12,12 @@ return new class extends Migration
     public function up(): void
     {
         // 調理手順
-        Schema::create('instructions', function (Blueprint $table) {
+        Schema::create('recipe_instructions', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('recipe_id')->comment('レシピID');
             $table->unsignedInteger('instruction_no')->comment('調理手順No');
-            $table->string('instruction_image_url', 2048)->nullable(false)->comment('調理手順画像URL');
+            $table->text('description')->comment('調理の説明');
+            $table->string('instruction_image_url', 2048)->nullable()->comment('調理手順画像URL');
             $table->unsignedBigInteger('user_id')->comment('ユーザーID');
             $table->timestamp('created_at')->useCurrent()->comment('作成日時');
         });
@@ -27,6 +28,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('instructions');
+        Schema::dropIfExists('recipe_instructions');
     }
 };
