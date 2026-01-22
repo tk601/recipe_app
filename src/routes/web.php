@@ -49,5 +49,13 @@ Route::middleware('auth')->group(function () {
     Route::post('/recipes/toggle-like', [RecipeController::class, 'toggleLike'])
         ->name('recipes.toggle-like');
 
+    // 冷蔵庫から食材を削除
+    Route::post('/recipes/remove-from-refrigerator', [RecipeController::class, 'removeFromRefrigerator'])
+        ->name('recipes.remove-from-refrigerator');
+
+    // 冷蔵庫から買い物リストに移動
+    Route::post('/recipes/move-to-shopping-list', [RecipeController::class, 'moveToShoppingList'])
+        ->name('recipes.move-to-shopping-list');
+
 });
 require __DIR__.'/auth.php';

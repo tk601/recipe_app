@@ -207,6 +207,17 @@ class RecipeController extends Controller
             )
             ->get();
 
+        // ユーザーの冷蔵庫にある食材IDを取得
+        $userIngredientIds = Refrigerator::where('user_id', $userId)
+            ->pluck('ingredients_id')
+            ->toArray();
+
+        // 各材料に冷蔵庫の在庫情報を追加
+        $ingredients = $ingredients->map(function ($ingredient) use ($userIngredientIds) {
+            $ingredient->in_stock = in_array($ingredient->id, $userIngredientIds);
+            return $ingredient;
+        });
+
         // 調理手順を取得
         $instructions = RecipeInstruction::where('recipe_id', $id)
             ->orderBy('instruction_no', 'asc')
@@ -326,12 +337,12 @@ class RecipeController extends Controller
             }
 
             // 調理手順を保存
-            foreach ($validated['instructions'] as $instruction) {
+            foreach ($validated['instructions'] as $index => $instruction) {
                 $instructionImageUrl = null;
 
-                // 手順画像の保存
-                if ($request->hasFile("instructions.{$instruction['instruction_no']}.image")) {
-                    $path = $request->file("instructions.{$instruction['instruction_no']}.image")
+                // 手順画像の保存（インデックスベースでファイルを取得）
+                if ($request->hasFile("instructions.{$index}.image")) {
+                    $path = $request->file("instructions.{$index}.image")
                         ->store('instructions', 'public');
                     $instructionImageUrl = Storage::url($path);
                 }
@@ -389,5 +400,72 @@ class RecipeController extends Controller
         }
 
         return redirect()->back();
+    }
+
+    /**
+     * 冷蔵庫から食材を削除
+     */
+    public function removeFromRefrigerator(Request $request)
+    {
+        $validated = $request->validate([
+            'ingredient_ids' => 'required|array',
+            'ingredient_ids.*' => 'required|exists:ingredients,id',
+        ]);
+
+        $userId = Auth::id();
+
+        // 選択された食材を冷蔵庫から削除
+        Refrigerator::where('user_id', $userId)
+            ->whereIn('ingredients_id', $validated['ingredient_ids'])
+            ->delete();
+
+        return redirect()->back()->with('success', '冷蔵庫から削除しました');
+    }
+
+    /**
+     * 冷蔵庫から買い物リストに移動
+     */
+    public function moveToShoppingList(Request $request)
+    {
+        $validated = $request->validate([
+            'ingredient_ids' => 'required|array',
+            'ingredient_ids.*' => 'required|exists:ingredients,id',
+        ]);
+
+        $userId = Auth::id();
+
+        DB::beginTransaction();
+
+        try {
+            foreach ($validated['ingredient_ids'] as $ingredientId) {
+                // 既に買い物リストに存在するかチェック
+                $exists = DB::table('shopping_lists')
+                    ->where('user_id', $userId)
+                    ->where('ingredients_id', $ingredientId)
+                    ->exists();
+
+                // 存在しない場合のみ追加
+                if (!$exists) {
+                    DB::table('shopping_lists')->insert([
+                        'user_id' => $userId,
+                        'ingredients_id' => $ingredientId,
+                        'check_flg' => false,
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ]);
+                }
+
+                // 冷蔵庫から削除
+                Refrigerator::where('user_id', $userId)
+                    ->where('ingredients_id', $ingredientId)
+                    ->delete();
+            }
+
+            DB::commit();
+            return redirect()->back()->with('success', '買い物リストに移動しました');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return redirect()->back()->withErrors(['error' => '移動に失敗しました']);
+        }
     }
 }

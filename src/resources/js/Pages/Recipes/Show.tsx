@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Head, router } from '@inertiajs/react';
-import { ArrowLeft, Heart } from 'lucide-react';
+import { ArrowLeft, Heart, Refrigerator as RefrigeratorIcon } from 'lucide-react';
 import Footer from '@/Components/Mobile/Footer';
 
 interface Recipe {
@@ -20,6 +20,7 @@ interface Ingredient {
     ingredient_name: string;
     quantity: number;
     unit: string;
+    in_stock: boolean; // 冷蔵庫の在庫情報
 }
 
 interface Instruction {
@@ -35,6 +36,11 @@ interface Props {
 }
 
 export default function RecipeShow({ recipe, ingredients, instructions }: Props) {
+    // 冷蔵庫確認モーダルの表示状態
+    const [showRefrigeratorModal, setShowRefrigeratorModal] = useState(false);
+
+    // 選択された食材ID
+    const [selectedIngredientIds, setSelectedIngredientIds] = useState<Set<number>>(new Set());
     /**
      * 前の画面に戻る
      */
@@ -51,6 +57,83 @@ export default function RecipeShow({ recipe, ingredients, instructions }: Props)
         }, {
             preserveState: true,
             preserveScroll: true
+        });
+    };
+
+    /**
+     * 冷蔵庫確認モーダルを開く
+     */
+    const openRefrigeratorModal = () => {
+        setShowRefrigeratorModal(true);
+        setSelectedIngredientIds(new Set());
+    };
+
+    /**
+     * 冷蔵庫確認モーダルを閉じる
+     */
+    const closeRefrigeratorModal = () => {
+        setShowRefrigeratorModal(false);
+        setSelectedIngredientIds(new Set());
+    };
+
+    /**
+     * 食材の選択/選択解除
+     */
+    const toggleIngredientSelection = (ingredientId: number) => {
+        const newSelection = new Set(selectedIngredientIds);
+        if (newSelection.has(ingredientId)) {
+            newSelection.delete(ingredientId);
+        } else {
+            newSelection.add(ingredientId);
+        }
+        setSelectedIngredientIds(newSelection);
+    };
+
+    /**
+     * 冷蔵庫から削除
+     */
+    const handleRemoveFromRefrigerator = () => {
+        if (selectedIngredientIds.size === 0) {
+            alert('食材を選択してください');
+            return;
+        }
+
+        if (!confirm('選択した食材を冷蔵庫から削除しますか？')) {
+            return;
+        }
+
+        router.post(route('recipes.remove-from-refrigerator'), {
+            ingredient_ids: Array.from(selectedIngredientIds)
+        }, {
+            preserveState: false,
+            preserveScroll: true,
+            onSuccess: () => {
+                closeRefrigeratorModal();
+            }
+        });
+    };
+
+    /**
+     * 買い物リストに移動
+     */
+    const handleMoveToShoppingList = () => {
+        if (selectedIngredientIds.size === 0) {
+            alert('食材を選択してください');
+            return;
+        }
+
+        if (!confirm('選択した食材を買い物リストに移動しますか？')) {
+            return;
+        }
+
+        router.post(route('recipes.move-to-shopping-list'), {
+            ingredient_ids: Array.from(selectedIngredientIds)
+        }, {
+            preserveState: false,
+            preserveScroll: true,
+            onSuccess: () => {
+                closeRefrigeratorModal();
+            }
         });
     };
 
@@ -128,15 +211,22 @@ export default function RecipeShow({ recipe, ingredients, instructions }: Props)
 
                 {/* 材料一覧 */}
                 <div className="bg-white mt-4 rounded-lg shadow-sm p-6">
-                    <h2
-                        className="text-lg font-bold mb-4 pb-2 border-b"
-                        style={{
-                            color: 'var(--main-color)',
-                            borderColor: 'var(--gray)'
-                        }}
-                    >
-                        材料
-                    </h2>
+                    <div className="flex justify-between items-center mb-4 pb-2 border-b" style={{ borderColor: 'var(--gray)' }}>
+                        <h2
+                            className="text-lg font-bold"
+                            style={{ color: 'var(--main-color)' }}
+                        >
+                            材料
+                        </h2>
+                        <button
+                            onClick={openRefrigeratorModal}
+                            className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors"
+                            style={{ backgroundColor: 'var(--main-color)', color: 'white' }}
+                        >
+                            <RefrigeratorIcon className="w-4 h-4" />
+                            冷蔵庫を確認
+                        </button>
+                    </div>
                     <div className="space-y-3">
                         {ingredients.map((ingredient, index) => (
                             <div
@@ -227,6 +317,106 @@ export default function RecipeShow({ recipe, ingredients, instructions }: Props)
                     </div>
                 )}
             </main>
+
+            {/* 冷蔵庫確認モーダル */}
+            {showRefrigeratorModal && (
+                <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+                    <div className="bg-white w-full max-w-2xl max-h-[80vh] rounded-2xl overflow-hidden flex flex-col">
+                        {/* モーダルヘッダー */}
+                        <div className="flex justify-between items-center p-4 border-b" style={{ borderColor: 'var(--gray)' }}>
+                            <h3 className="font-bold text-lg" style={{ color: 'var(--black)' }}>冷蔵庫を確認</h3>
+                            <button onClick={closeRefrigeratorModal}>
+                                <ArrowLeft className="w-6 h-6" style={{ color: 'var(--dark-gray)' }} />
+                            </button>
+                        </div>
+
+                        {/* 食材リスト */}
+                        <div className="overflow-y-auto flex-1 p-4">
+                            <div className="space-y-2">
+                                {ingredients.map((ingredient) => (
+                                    <div
+                                        key={ingredient.id}
+                                        className="flex items-center gap-3 p-3 border rounded-lg"
+                                        style={{ borderColor: 'var(--gray)' }}
+                                    >
+                                        {/* チェックボックス */}
+                                        <input
+                                            type="checkbox"
+                                            checked={selectedIngredientIds.has(ingredient.id)}
+                                            onChange={() => toggleIngredientSelection(ingredient.id)}
+                                            className="w-5 h-5 rounded cursor-pointer"
+                                            style={{ accentColor: 'var(--main-color)' }}
+                                        />
+
+                                        {/* 食材情報 */}
+                                        <div className="flex-1">
+                                            <div className="flex items-center gap-2">
+                                                <span
+                                                    className="font-medium"
+                                                    style={{ color: 'var(--black)' }}
+                                                >
+                                                    {ingredient.ingredient_name}
+                                                </span>
+                                                {/* 在庫バッジ */}
+                                                <span
+                                                    className="text-xs px-2 py-0.5 rounded-full font-medium"
+                                                    style={{
+                                                        backgroundColor: ingredient.in_stock ? 'var(--main-color)' : 'var(--light-gray)',
+                                                        color: ingredient.in_stock ? 'white' : 'var(--dark-gray)'
+                                                    }}
+                                                >
+                                                    {ingredient.in_stock ? '在庫あり' : '在庫なし'}
+                                                </span>
+                                            </div>
+                                            <span
+                                                className="text-sm"
+                                                style={{ color: 'var(--dark-gray)' }}
+                                            >
+                                                必要量: {ingredient.quantity} {ingredient.unit}
+                                            </span>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* アクションボタン */}
+                        <div className="p-4 border-t space-y-2" style={{ borderColor: 'var(--gray)' }}>
+                            <button
+                                onClick={handleRemoveFromRefrigerator}
+                                disabled={selectedIngredientIds.size === 0}
+                                className="w-full py-3 rounded-lg font-bold transition-opacity"
+                                style={{
+                                    backgroundColor: selectedIngredientIds.size === 0 ? 'var(--gray)' : '#ef4444',
+                                    color: 'white',
+                                    opacity: selectedIngredientIds.size === 0 ? 0.5 : 1
+                                }}
+                            >
+                                冷蔵庫から削除 {selectedIngredientIds.size > 0 && `(${selectedIngredientIds.size}個)`}
+                            </button>
+                            <button
+                                onClick={handleMoveToShoppingList}
+                                disabled={selectedIngredientIds.size === 0}
+                                className="w-full py-3 rounded-lg font-bold transition-opacity"
+                                style={{
+                                    backgroundColor: selectedIngredientIds.size === 0 ? 'var(--gray)' : 'var(--main-color)',
+                                    color: 'white',
+                                    opacity: selectedIngredientIds.size === 0 ? 0.5 : 1
+                                }}
+                            >
+                                買い物リストに移動 {selectedIngredientIds.size > 0 && `(${selectedIngredientIds.size}個)`}
+                            </button>
+                            <button
+                                onClick={closeRefrigeratorModal}
+                                className="w-full py-3 text-sm"
+                                style={{ color: 'var(--dark-gray)' }}
+                            >
+                                閉じる
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* フッター */}
             <Footer currentPage="recipe" />

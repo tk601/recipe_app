@@ -250,12 +250,46 @@ export default function RecipeCreate({ ingredients, ingredientCategories, recipe
      * 公開設定を決定して保存
      */
     const handleSubmit = (publish: boolean) => {
-        // 公開フラグを設定
-        setData('publish_flg', publish);
+        // FormDataを作成（画像ファイルを含むため）
+        const formData = new FormData();
 
-        // useFormのpostメソッドを使用することでCSRFトークンが自動的に処理される
-        // コントローラーからのリダイレクトが自動的に処理されるため、onSuccessでのリダイレクトは不要
-        post(route('recipes.store'));
+        // 基本情報
+        formData.append('recipe_name', data.recipe_name);
+        formData.append('recipe_category_id', data.recipe_category_id);
+        formData.append('serving_size', data.serving_size);
+        formData.append('recommended_points', data.recommended_points);
+        formData.append('publish_flg', publish ? '1' : '0');
+
+        // レシピ画像
+        if (data.recipe_image) {
+            formData.append('recipe_image', data.recipe_image);
+        }
+
+        // 材料
+        data.ingredients.forEach((ingredient, index) => {
+            formData.append(`ingredients[${index}][ingredient_id]`, ingredient.ingredient_id.toString());
+            formData.append(`ingredients[${index}][quantity]`, ingredient.quantity);
+            formData.append(`ingredients[${index}][unit]`, ingredient.unit);
+        });
+
+        // 調理手順
+        data.instructions.forEach((instruction, index) => {
+            formData.append(`instructions[${index}][instruction_no]`, instruction.instruction_no.toString());
+            formData.append(`instructions[${index}][description]`, instruction.description);
+
+            // 手順画像
+            if (instruction.image) {
+                formData.append(`instructions[${index}][image]`, instruction.image);
+            }
+        });
+
+        // useFormのpostメソッドでFormDataを送信
+        // Inertia.jsは自動的にmultipart/form-dataとして送信し、CSRFトークンも処理する
+        post(route('recipes.store'), {
+            data: formData,
+            forceFormData: true,
+            preserveScroll: true,
+        });
     };
 
     // カテゴリでフィルタリングされた食材
