@@ -98,12 +98,23 @@ export default function RecipeShow({ recipe, ingredients, instructions }: Props)
             return;
         }
 
-        if (!confirm('選択した食材を冷蔵庫から削除しますか？')) {
+        // 在庫がある食材のみをフィルタリング
+        const inStockIngredientIds = Array.from(selectedIngredientIds).filter(id => {
+            const ingredient = ingredients.find(ing => ing.id === id);
+            return ingredient?.in_stock === true;
+        });
+
+        if (inStockIngredientIds.length === 0) {
+            alert('冷蔵庫に在庫のある食材を選択してください');
+            return;
+        }
+
+        if (!confirm(`選択した食材を冷蔵庫から削除しますか？（${inStockIngredientIds.length}個）`)) {
             return;
         }
 
         router.post(route('recipes.remove-from-refrigerator'), {
-            ingredient_ids: Array.from(selectedIngredientIds)
+            ingredient_ids: inStockIngredientIds
         }, {
             preserveState: false,
             preserveScroll: true,
@@ -114,7 +125,7 @@ export default function RecipeShow({ recipe, ingredients, instructions }: Props)
     };
 
     /**
-     * 買い物リストに移動
+     * 買い物リストに追加
      */
     const handleMoveToShoppingList = () => {
         if (selectedIngredientIds.size === 0) {
@@ -122,12 +133,15 @@ export default function RecipeShow({ recipe, ingredients, instructions }: Props)
             return;
         }
 
-        if (!confirm('選択した食材を買い物リストに移動しますか？')) {
+        // 全ての選択された食材を買い物リストに追加
+        const selectedIdsArray = Array.from(selectedIngredientIds);
+
+        if (!confirm(`選択した食材を買い物リストに追加しますか？（${selectedIdsArray.length}個）`)) {
             return;
         }
 
         router.post(route('recipes.move-to-shopping-list'), {
-            ingredient_ids: Array.from(selectedIngredientIds)
+            ingredient_ids: selectedIdsArray
         }, {
             preserveState: false,
             preserveScroll: true,
@@ -410,7 +424,7 @@ export default function RecipeShow({ recipe, ingredients, instructions }: Props)
                                     opacity: selectedIngredientIds.size === 0 ? 0.5 : 1
                                 }}
                             >
-                                冷蔵庫から削除 {selectedIngredientIds.size > 0 && `(${selectedIngredientIds.size}個)`}
+                                冷蔵庫から削除 {selectedIngredientIds.size > 0 && `(${Array.from(selectedIngredientIds).filter(id => ingredients.find(ing => ing.id === id)?.in_stock).length}個)`}
                             </button>
                             <button
                                 onClick={handleMoveToShoppingList}
@@ -422,7 +436,7 @@ export default function RecipeShow({ recipe, ingredients, instructions }: Props)
                                     opacity: selectedIngredientIds.size === 0 ? 0.5 : 1
                                 }}
                             >
-                                買い物リストに移動 {selectedIngredientIds.size > 0 && `(${selectedIngredientIds.size}個)`}
+                                買い物リストに追加 {selectedIngredientIds.size > 0 && `(${selectedIngredientIds.size}個)`}
                             </button>
                             <button
                                 onClick={closeRefrigeratorModal}

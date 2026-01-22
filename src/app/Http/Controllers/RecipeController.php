@@ -423,7 +423,7 @@ class RecipeController extends Controller
     }
 
     /**
-     * 冷蔵庫から買い物リストに移動
+     * 買い物リストに追加（在庫がない食材のみ）
      */
     public function moveToShoppingList(Request $request)
     {
@@ -454,18 +454,13 @@ class RecipeController extends Controller
                         'updated_at' => now(),
                     ]);
                 }
-
-                // 冷蔵庫から削除
-                Refrigerator::where('user_id', $userId)
-                    ->where('ingredients_id', $ingredientId)
-                    ->delete();
             }
 
             DB::commit();
-            return redirect()->back()->with('success', '買い物リストに移動しました');
+            return redirect()->back()->with('success', '買い物リストに追加しました');
         } catch (\Exception $e) {
             DB::rollBack();
-            return redirect()->back()->withErrors(['error' => '移動に失敗しました']);
+            return redirect()->back()->withErrors(['error' => '追加に失敗しました']);
         }
     }
 }
