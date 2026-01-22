@@ -283,10 +283,9 @@ export default function RecipeCreate({ ingredients, ingredientCategories, recipe
             }
         });
 
-        // useFormのpostメソッドでFormDataを送信
+        // router.postを使用してFormDataを送信
         // Inertia.jsは自動的にmultipart/form-dataとして送信し、CSRFトークンも処理する
-        post(route('recipes.store'), {
-            data: formData,
+        router.post(route('recipes.store'), formData, {
             forceFormData: true,
             preserveScroll: true,
         });

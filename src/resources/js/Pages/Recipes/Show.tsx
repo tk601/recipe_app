@@ -336,17 +336,35 @@ export default function RecipeShow({ recipe, ingredients, instructions }: Props)
                                 {ingredients.map((ingredient) => (
                                     <div
                                         key={ingredient.id}
-                                        className="flex items-center gap-3 p-3 border rounded-lg"
+                                        onClick={() => toggleIngredientSelection(ingredient.id)}
+                                        className="flex items-center gap-3 p-3 border rounded-lg cursor-pointer transition-colors hover:bg-gray-50"
                                         style={{ borderColor: 'var(--gray)' }}
                                     >
                                         {/* チェックボックス */}
-                                        <input
-                                            type="checkbox"
-                                            checked={selectedIngredientIds.has(ingredient.id)}
-                                            onChange={() => toggleIngredientSelection(ingredient.id)}
-                                            className="w-5 h-5 rounded cursor-pointer"
-                                            style={{ accentColor: 'var(--main-color)' }}
-                                        />
+                                        <div className="relative flex items-center justify-center">
+                                            <input
+                                                type="checkbox"
+                                                checked={selectedIngredientIds.has(ingredient.id)}
+                                                onChange={() => {}} // クリックイベントは親要素で処理
+                                                className="w-5 h-5 rounded cursor-pointer appearance-none border-2 checked:border-0"
+                                                style={{
+                                                    borderColor: 'var(--gray)',
+                                                    backgroundColor: selectedIngredientIds.has(ingredient.id) ? 'var(--main-color)' : 'white'
+                                                }}
+                                            />
+                                            {/* チェックマーク */}
+                                            {selectedIngredientIds.has(ingredient.id) && (
+                                                <svg
+                                                    className="absolute w-3 h-3 pointer-events-none"
+                                                    fill="none"
+                                                    stroke="white"
+                                                    strokeWidth="3"
+                                                    viewBox="0 0 24 24"
+                                                >
+                                                    <path d="M5 13l4 4L19 7" />
+                                                </svg>
+                                            )}
+                                        </div>
 
                                         {/* 食材情報 */}
                                         <div className="flex-1">
