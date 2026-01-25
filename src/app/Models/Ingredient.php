@@ -20,13 +20,18 @@ class Ingredient extends Model
         'created_at'
     ];
 
-    // public function user(): BelongsTo
-    // {
-    //     return $this->belongsTo(User::class);
-    // }
+    public function category(): BelongsTo
+    {
+        return $this->belongsTo(IngredientCategory::class, 'ingredient_category_id');
+    }
 
-    // public function refrigerators(): HasMany
-    // {
-    //     return $this->hasMany(Refrigerator::class);
-    // }
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    public function refrigerators(): HasMany
+    {
+        return $this->hasMany(Refrigerator::class);
+    }
 }

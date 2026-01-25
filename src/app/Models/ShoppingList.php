@@ -17,13 +17,13 @@ class ShoppingList extends Model
         'created_at'
     ];
 
-    // public function ingredient(): BelongsTo
-    // {
-    //     return $this->belongsTo(Ingredient::class, 'ingredients_id');
-    // }
+    public function ingredient(): BelongsTo
+    {
+        return $this->belongsTo(Ingredient::class, 'ingredients_id');
+    }
 
-    // public function user(): BelongsTo
-    // {
-    //     return $this->belongsTo(User::class);
-    // }
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
+    }
 }

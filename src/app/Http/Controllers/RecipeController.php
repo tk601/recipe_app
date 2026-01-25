@@ -423,7 +423,7 @@ class RecipeController extends Controller
     }
 
     /**
-     * 買い物リストに追加（在庫がない食材のみ）
+     * 買い物リストに追加
      */
     public function moveToShoppingList(Request $request)
     {
@@ -449,9 +449,8 @@ class RecipeController extends Controller
                     DB::table('shopping_lists')->insert([
                         'user_id' => $userId,
                         'ingredients_id' => $ingredientId,
-                        'check_flg' => false,
+                        'check_flg' => 0,
                         'created_at' => now(),
-                        'updated_at' => now(),
                     ]);
                 }
             }
@@ -460,6 +459,7 @@ class RecipeController extends Controller
             return redirect()->back()->with('success', '買い物リストに追加しました');
         } catch (\Exception $e) {
             DB::rollBack();
+            Log::error('買い物リスト追加エラー: ' . $e->getMessage());
             return redirect()->back()->withErrors(['error' => '追加に失敗しました']);
         }
     }

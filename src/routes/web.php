@@ -3,6 +3,7 @@
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\IngredientController;
 use App\Http\Controllers\RecipeController;
+use App\Http\Controllers\ShoppingListController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -56,6 +57,13 @@ Route::middleware('auth')->group(function () {
     // 冷蔵庫から買い物リストに移動
     Route::post('/recipes/move-to-shopping-list', [RecipeController::class, 'moveToShoppingList'])
         ->name('recipes.move-to-shopping-list');
+
+    // 買い物リスト管理のルート
+    Route::get('/shopping-lists', [ShoppingListController::class, 'index'])->name('shopping-lists.index');
+    Route::post('/shopping-lists', [ShoppingListController::class, 'store'])->name('shopping-lists.store');
+    Route::delete('/shopping-lists', [ShoppingListController::class, 'destroy'])->name('shopping-lists.destroy');
+    Route::post('/shopping-lists/move-to-refrigerator', [ShoppingListController::class, 'moveToRefrigerator'])
+        ->name('shopping-lists.move-to-refrigerator');
 
 });
 require __DIR__.'/auth.php';

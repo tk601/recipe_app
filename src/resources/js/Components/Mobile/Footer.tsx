@@ -1,5 +1,5 @@
 import { Link } from '@inertiajs/react';
-import { ChefHat, Refrigerator, ShoppingCart, User } from 'lucide-react';
+import { CookingPot, Refrigerator, ShoppingCart, User } from 'lucide-react';
 
 interface FooterProps {
     currentPage?: string;
@@ -22,7 +22,7 @@ const Footer = ({ currentPage = 'refrigerators' }: FooterProps) => {
                         isActive('recipe') ? '' : 'opacity-60'
                     }`}
                 >
-                    <ChefHat
+                    <CookingPot
                         className="w-6 h-6 mb-1"
                         style={{ color: isActive('recipe') ? 'var(--main-color)' : 'var(--dark-gray)' }}
                     />
@@ -55,7 +55,7 @@ const Footer = ({ currentPage = 'refrigerators' }: FooterProps) => {
 
                 {/* 買い物リスト */}
                 <Link
-                    href="#"
+                    href={route('shopping-lists.index')}
                     className={`flex flex-col items-center p-3 w-full transition-colors ${
                         isActive('shoppingLists') ? '' : 'opacity-60'
                     }`}
