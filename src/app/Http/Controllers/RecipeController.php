@@ -189,6 +189,7 @@ class RecipeController extends Controller
                 'recipes.recipe_category_id',
                 'recipes.serving_size',
                 'recipes.recommended_points',
+                'recipes.user_id',
                 'recipe_categories.recipe_category_name'
             )
             ->join('recipe_categories', 'recipes.recipe_category_id', '=', 'recipe_categories.id')
@@ -244,6 +245,7 @@ class RecipeController extends Controller
                 'recipe_category_name' => $recipe->recipe_category_name,
                 'serving_size' => $recipe->serving_size,
                 'recommended_points' => $recipe->recommended_points,
+                'user_id' => $recipe->user_id,
                 'likes_count' => $likesCount,
                 'is_liked' => $isLiked,
             ],
@@ -363,6 +365,200 @@ class RecipeController extends Controller
             Log::error("保存エラー: " . $e->getMessage());
             DB::rollBack();
             return redirect()->back()->withErrors(['error' => 'レシピの作成に失敗しました: ' . $e->getMessage()]);
+        }
+    }
+
+    /**
+     * レシピ編集画面を表示
+     */
+    public function edit($id)
+    {
+        $userId = Auth::id();
+
+        // レシピの基本情報を取得
+        $recipe = Recipe::where('id', $id)
+            ->where('user_id', $userId) // 自分のレシピのみ編集可能
+            ->firstOrFail();
+
+        // レシピの材料一覧を取得
+        $recipeIngredients = RecipeIngredient::where('recipe_id', $id)
+            ->join('ingredients', 'recipe_ingredients.ingredients_id', '=', 'ingredients.id')
+            ->select(
+                'recipe_ingredients.id',
+                'ingredients.id as ingredient_id',
+                'ingredients.name as ingredient_name',
+                'recipe_ingredients.quantity',
+                'recipe_ingredients.unit'
+            )
+            ->get();
+
+        // 調理手順を取得
+        $instructions = RecipeInstruction::where('recipe_id', $id)
+            ->orderBy('instruction_no', 'asc')
+            ->get();
+
+        // 食材一覧を取得
+        $ingredients = Ingredient::select('id', 'name', 'ingredient_category_id')
+            ->orderBy('ingredient_category_id')
+            ->orderBy('name')
+            ->get();
+
+        // 食材カテゴリ一覧を取得
+        $ingredientCategories = IngredientCategory::select('id', 'name')
+            ->orderBy('id')
+            ->get();
+
+        // レシピカテゴリ一覧を取得
+        $recipeCategories = RecipeCategory::select('id', 'recipe_category_name')
+            ->orderBy('id')
+            ->get();
+
+        return Inertia::render('Recipes/Edit', [
+            'recipe' => $recipe,
+            'recipeIngredients' => $recipeIngredients,
+            'instructions' => $instructions,
+            'ingredients' => $ingredients,
+            'ingredientCategories' => $ingredientCategories,
+            'recipeCategories' => $recipeCategories,
+        ]);
+    }
+
+    /**
+     * レシピを更新
+     */
+    public function update(Request $request, $id)
+    {
+        $userId = Auth::id();
+
+        // 自分のレシピか確認
+        $recipe = Recipe::where('id', $id)
+            ->where('user_id', $userId)
+            ->firstOrFail();
+
+        // バリデーション
+        $validated = $request->validate([
+            'recipe_name' => 'required|string|max:255',
+            'recipe_category_id' => 'required|exists:recipe_categories,id',
+            'serving_size' => 'required|integer|min:1|max:6',
+            'recommended_points' => 'nullable|string',
+            'recipe_image' => 'nullable|image|max:5120',
+            'publish_flg' => 'required|boolean',
+            'ingredients' => 'required|array|min:1',
+            'ingredients.*.ingredient_id' => 'required|exists:ingredients,id',
+            'ingredients.*.quantity' => 'required|string',
+            'ingredients.*.unit' => 'required|string',
+            'instructions' => 'required|array|min:1',
+            'instructions.*.instruction_no' => 'required|integer',
+            'instructions.*.description' => 'required|string',
+            'instructions.*.image' => 'nullable|image|max:5120',
+        ]);
+
+        DB::beginTransaction();
+
+        try {
+            // レシピ画像の保存
+            $recipeImageUrl = $recipe->recipe_image_url;
+            if ($request->hasFile('recipe_image')) {
+                // 古い画像を削除
+                if ($recipe->recipe_image_url) {
+                    $oldPath = str_replace('/storage/', '', $recipe->recipe_image_url);
+                    Storage::disk('public')->delete($oldPath);
+                }
+                $path = $request->file('recipe_image')->store('recipes', 'public');
+                $recipeImageUrl = Storage::url($path);
+            }
+
+            // レシピを更新
+            $recipe->update([
+                'recipe_name' => $validated['recipe_name'],
+                'recipe_category_id' => $validated['recipe_category_id'],
+                'recipe_image_url' => $recipeImageUrl,
+                'serving_size' => $validated['serving_size'],
+                'recommended_points' => $validated['recommended_points'],
+                'publish_flg' => $validated['publish_flg'],
+            ]);
+
+            // 既存の材料を削除
+            RecipeIngredient::where('recipe_id', $recipe->id)->delete();
+
+            // 材料を保存
+            foreach ($validated['ingredients'] as $ingredient) {
+                RecipeIngredient::create([
+                    'recipe_id' => $recipe->id,
+                    'ingredients_id' => $ingredient['ingredient_id'],
+                    'quantity' => $ingredient['quantity'],
+                    'unit' => $ingredient['unit'],
+                ]);
+            }
+
+            // 既存の手順を削除
+            RecipeInstruction::where('recipe_id', $recipe->id)->delete();
+
+            // 調理手順を保存
+            foreach ($validated['instructions'] as $index => $instruction) {
+                $instructionImageUrl = null;
+
+                if ($request->hasFile("instructions.{$index}.image")) {
+                    $path = $request->file("instructions.{$index}.image")
+                        ->store('instructions', 'public');
+                    $instructionImageUrl = Storage::url($path);
+                }
+
+                RecipeInstruction::create([
+                    'recipe_id' => $recipe->id,
+                    'instruction_no' => $instruction['instruction_no'],
+                    'description' => $instruction['description'],
+                    'instruction_image_url' => $instructionImageUrl,
+                    'user_id' => $userId,
+                ]);
+            }
+
+            DB::commit();
+
+            return redirect()->route('recipes.show', $recipe->id)->with('success', 'レシピを更新しました');
+        } catch (\Exception $e) {
+            Log::error("更新エラー: " . $e->getMessage());
+            DB::rollBack();
+            return redirect()->back()->withErrors(['error' => 'レシピの更新に失敗しました: ' . $e->getMessage()]);
+        }
+    }
+
+    /**
+     * レシピを削除
+     */
+    public function destroy($id)
+    {
+        $userId = Auth::id();
+
+        // 自分のレシピか確認
+        $recipe = Recipe::where('id', $id)
+            ->where('user_id', $userId)
+            ->firstOrFail();
+
+        DB::beginTransaction();
+
+        try {
+            // 画像を削除
+            if ($recipe->recipe_image_url) {
+                $path = str_replace('/storage/', '', $recipe->recipe_image_url);
+                Storage::disk('public')->delete($path);
+            }
+
+            // 関連データを削除（カスケード削除）
+            RecipeIngredient::where('recipe_id', $recipe->id)->delete();
+            RecipeInstruction::where('recipe_id', $recipe->id)->delete();
+            DB::table('goods')->where('recipe_id', $recipe->id)->delete();
+
+            // レシピを削除
+            $recipe->delete();
+
+            DB::commit();
+
+            return redirect()->route('recipes.index')->with('success', 'レシピを削除しました');
+        } catch (\Exception $e) {
+            Log::error("削除エラー: " . $e->getMessage());
+            DB::rollBack();
+            return redirect()->back()->withErrors(['error' => 'レシピの削除に失敗しました']);
         }
     }
 

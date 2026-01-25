@@ -45,6 +45,9 @@ Route::middleware('auth')->group(function () {
     Route::get('/recipes/create', [RecipeController::class, 'create'])->name('recipes.create');
     Route::post('/recipes', [RecipeController::class, 'store'])->name('recipes.store');
     Route::get('/recipes/{id}', [RecipeController::class, 'show'])->name('recipes.show');
+    Route::get('/recipes/{id}/edit', [RecipeController::class, 'edit'])->name('recipes.edit');
+    Route::put('/recipes/{id}', [RecipeController::class, 'update'])->name('recipes.update');
+    Route::delete('/recipes/{id}', [RecipeController::class, 'destroy'])->name('recipes.destroy');
 
     // レシピのいいねを切り替え
     Route::post('/recipes/toggle-like', [RecipeController::class, 'toggleLike'])

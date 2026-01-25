@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Head, router, usePage } from '@inertiajs/react';
-import { ArrowLeft, Heart, Refrigerator as RefrigeratorIcon, X } from 'lucide-react';
+import { ArrowLeft, Heart, Refrigerator as RefrigeratorIcon, X, Edit, Trash2 } from 'lucide-react';
 import Footer from '@/Components/Mobile/Footer';
 
 interface Recipe {
@@ -11,6 +11,7 @@ interface Recipe {
     recipe_category_name: string;
     serving_size: number;
     recommended_points: string | null;
+    user_id: number;
     likes_count: number;
     is_liked: boolean;
 }
@@ -52,6 +53,7 @@ export default function RecipeShow({ recipe, ingredients, instructions }: Props)
     // フラッシュメッセージを取得
     const page = usePage<PageProps>();
     const flash = page.props.flash;
+    const currentUser = page.props.auth.user;
 
     // 冷蔵庫確認モーダルの表示状態
     const [showRefrigeratorModal, setShowRefrigeratorModal] = useState(false);
@@ -61,6 +63,12 @@ export default function RecipeShow({ recipe, ingredients, instructions }: Props)
 
     // フラッシュメッセージの表示状態
     const [showFlash, setShowFlash] = useState(false);
+
+    // 削除確認モーダルの表示状態
+    const [showDeleteModal, setShowDeleteModal] = useState(false);
+
+    // 自分のレシピかどうかを判定
+    const isOwner = currentUser && recipe.user_id === currentUser.id;
 
     // フラッシュメッセージが存在する場合に表示
     useEffect(() => {
@@ -78,6 +86,24 @@ export default function RecipeShow({ recipe, ingredients, instructions }: Props)
      */
     const handleBack = () => {
         router.visit(route('recipes.index', { category: recipe.recipe_category_id }));
+    };
+
+    /**
+     * レシピ編集画面に遷移
+     */
+    const handleEdit = () => {
+        router.visit(route('recipes.edit', recipe.id));
+    };
+
+    /**
+     * レシピ削除
+     */
+    const handleDelete = () => {
+        router.delete(route('recipes.destroy', recipe.id), {
+            onSuccess: () => {
+                setShowDeleteModal(false);
+            }
+        });
     };
 
     /**
@@ -220,19 +246,48 @@ export default function RecipeShow({ recipe, ingredients, instructions }: Props)
                     />
                 </button>
 
-                {/* いいねボタン */}
-                <button
-                    onClick={handleLike}
-                    className="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/90 flex items-center justify-center shadow-md transition-all duration-200 hover:bg-white active:scale-95"
-                >
-                    <Heart
-                        className="w-6 h-6"
-                        style={{
-                            color: recipe.is_liked ? 'var(--main-color)' : 'var(--dark-gray)',
-                            fill: recipe.is_liked ? 'var(--main-color)' : 'none'
-                        }}
-                    />
-                </button>
+                {/* 右上のボタン群 */}
+                <div className="absolute top-4 right-4 flex gap-2">
+                    {/* 編集ボタン（自分のレシピの場合のみ表示） */}
+                    {isOwner && (
+                        <button
+                            onClick={handleEdit}
+                            className="w-10 h-10 rounded-full bg-white/90 flex items-center justify-center shadow-md transition-all duration-200 hover:bg-white active:scale-95"
+                        >
+                            <Edit
+                                className="w-5 h-5"
+                                style={{ color: 'var(--main-color)' }}
+                            />
+                        </button>
+                    )}
+
+                    {/* 削除ボタン（自分のレシピの場合のみ表示） */}
+                    {isOwner && (
+                        <button
+                            onClick={() => setShowDeleteModal(true)}
+                            className="w-10 h-10 rounded-full bg-white/90 flex items-center justify-center shadow-md transition-all duration-200 hover:bg-white active:scale-95"
+                        >
+                            <Trash2
+                                className="w-5 h-5"
+                                style={{ color: '#ef4444' }}
+                            />
+                        </button>
+                    )}
+
+                    {/* いいねボタン */}
+                    <button
+                        onClick={handleLike}
+                        className="w-10 h-10 rounded-full bg-white/90 flex items-center justify-center shadow-md transition-all duration-200 hover:bg-white active:scale-95"
+                    >
+                        <Heart
+                            className="w-6 h-6"
+                            style={{
+                                color: recipe.is_liked ? 'var(--main-color)' : 'var(--dark-gray)',
+                                fill: recipe.is_liked ? 'var(--main-color)' : 'none'
+                            }}
+                        />
+                    </button>
+                </div>
 
                 {/* グラデーションオーバーレイ */}
                 <div className="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-black/50 to-transparent"></div>
@@ -487,6 +542,49 @@ export default function RecipeShow({ recipe, ingredients, instructions }: Props)
                                 style={{ color: 'var(--dark-gray)' }}
                             >
                                 閉じる
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* 削除確認モーダル */}
+            {showDeleteModal && (
+                <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+                    <div className="bg-white w-full max-w-md rounded-2xl overflow-hidden">
+                        {/* モーダルヘッダー */}
+                        <div className="p-6 border-b" style={{ borderColor: 'var(--gray)' }}>
+                            <h3 className="font-bold text-lg text-center" style={{ color: 'var(--black)' }}>
+                                レシピを削除しますか？
+                            </h3>
+                        </div>
+
+                        {/* メッセージ */}
+                        <div className="p-6">
+                            <p className="text-center" style={{ color: 'var(--dark-gray)' }}>
+                                この操作は取り消せません。<br />
+                                本当に「{recipe.recipe_name}」を削除しますか？
+                            </p>
+                        </div>
+
+                        {/* アクションボタン */}
+                        <div className="p-4 border-t space-y-2" style={{ borderColor: 'var(--gray)' }}>
+                            <button
+                                onClick={handleDelete}
+                                className="w-full py-3 rounded-lg font-bold transition-all active:scale-95"
+                                style={{
+                                    backgroundColor: '#ef4444',
+                                    color: 'white'
+                                }}
+                            >
+                                削除する
+                            </button>
+                            <button
+                                onClick={() => setShowDeleteModal(false)}
+                                className="w-full py-3 text-sm"
+                                style={{ color: 'var(--dark-gray)' }}
+                            >
+                                キャンセル
                             </button>
                         </div>
                     </div>
