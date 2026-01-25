@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
-import { Head, router } from '@inertiajs/react';
-import { ArrowLeft, Heart, Refrigerator as RefrigeratorIcon } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Head, router, usePage } from '@inertiajs/react';
+import { ArrowLeft, Heart, Refrigerator as RefrigeratorIcon, X } from 'lucide-react';
 import Footer from '@/Components/Mobile/Footer';
 
 interface Recipe {
@@ -29,18 +29,50 @@ interface Instruction {
     instruction_image_url: string | null;
 }
 
+interface FlashMessages {
+    success?: string;
+    error?: string;
+}
+
 interface Props {
     recipe: Recipe;
     ingredients: Ingredient[];
     instructions: Instruction[];
 }
 
+interface PageProps extends Props {
+    auth: {
+        user: any;
+    };
+    flash?: FlashMessages;
+    [key: string]: any;
+}
+
 export default function RecipeShow({ recipe, ingredients, instructions }: Props) {
+    // フラッシュメッセージを取得
+    const page = usePage<PageProps>();
+    const flash = page.props.flash;
+
     // 冷蔵庫確認モーダルの表示状態
     const [showRefrigeratorModal, setShowRefrigeratorModal] = useState(false);
 
     // 選択された食材ID
     const [selectedIngredientIds, setSelectedIngredientIds] = useState<Set<number>>(new Set());
+
+    // フラッシュメッセージの表示状態
+    const [showFlash, setShowFlash] = useState(false);
+
+    // フラッシュメッセージが存在する場合に表示
+    useEffect(() => {
+        if (flash?.success || flash?.error) {
+            setShowFlash(true);
+            // 3秒後に自動的に非表示
+            const timer = setTimeout(() => {
+                setShowFlash(false);
+            }, 3000);
+            return () => clearTimeout(timer);
+        }
+    }, [flash]);
     /**
      * 前の画面に戻る
      */
@@ -109,10 +141,6 @@ export default function RecipeShow({ recipe, ingredients, instructions }: Props)
             return;
         }
 
-        if (!confirm(`選択した食材を冷蔵庫から削除しますか？（${inStockIngredientIds.length}個）`)) {
-            return;
-        }
-
         router.post(route('recipes.remove-from-refrigerator'), {
             ingredient_ids: inStockIngredientIds
         }, {
@@ -136,10 +164,6 @@ export default function RecipeShow({ recipe, ingredients, instructions }: Props)
         // 全ての選択された食材を買い物リストに追加
         const selectedIdsArray = Array.from(selectedIngredientIds);
 
-        if (!confirm(`選択した食材を買い物リストに追加しますか？（${selectedIdsArray.length}個）`)) {
-            return;
-        }
-
         router.post(route('recipes.move-to-shopping-list'), {
             ingredient_ids: selectedIdsArray
         }, {
@@ -157,6 +181,25 @@ export default function RecipeShow({ recipe, ingredients, instructions }: Props)
             style={{ backgroundColor: 'var(--base-color)' }}
         >
             <Head title={`${recipe.recipe_name} - ごはんどき`} />
+
+            {/* フラッシュメッセージ */}
+            {showFlash && (flash?.success || flash?.error) && (
+                <div
+                    className="fixed top-4 left-4 right-4 z-50 px-4 py-3 rounded-lg shadow-lg flex items-center justify-between animate-fade-in"
+                    style={{
+                        backgroundColor: flash?.success ? 'var(--main-color)' : '#ef4444',
+                        color: 'white'
+                    }}
+                >
+                    <span className="font-medium">{flash?.success || flash?.error}</span>
+                    <button
+                        onClick={() => setShowFlash(false)}
+                        className="ml-4 p-1 hover:bg-white/20 rounded transition-colors"
+                    >
+                        <X className="w-4 h-4" />
+                    </button>
+                </div>
+            )}
 
             {/* レシピ画像ヘッダー */}
             <div className="relative w-full" style={{ height: '300px' }}>
