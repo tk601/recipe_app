@@ -515,7 +515,7 @@ class RecipeController extends Controller
 
             DB::commit();
 
-            return redirect()->route('recipes.show', $recipe->id)->with('success', 'レシピを更新しました');
+            return redirect()->route('recipes.show', $recipe->id)->with('success', '編集内容を保存しました');
         } catch (\Exception $e) {
             Log::error("更新エラー: " . $e->getMessage());
             DB::rollBack();

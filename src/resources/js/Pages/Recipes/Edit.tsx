@@ -113,9 +113,6 @@ export default function RecipeEdit({ recipe, recipeIngredients, instructions: in
     // 一時的に選択された食材ID
     const [tempSelectedIngredients, setTempSelectedIngredients] = useState<Set<number>>(new Set());
 
-    // 公開確認モーダルの表示状態
-    const [showPublishModal, setShowPublishModal] = useState(false);
-
     /**
      * 戻るボタン
      */
@@ -258,7 +255,7 @@ export default function RecipeEdit({ recipe, recipeIngredients, instructions: in
     };
 
     /**
-     * 保存ボタンクリック
+     * 保存ボタンクリック（既存の公開設定を維持したまま保存）
      */
     const handleSave = () => {
         // バリデーション
@@ -279,23 +276,15 @@ export default function RecipeEdit({ recipe, recipeIngredients, instructions: in
             return;
         }
 
-        // 公開確認モーダルを表示
-        setShowPublishModal(true);
-    };
-
-    /**
-     * 公開設定を決定して保存
-     */
-    const handleSubmit = (publish: boolean) => {
         // FormDataを作成（画像ファイルを含むため）
         const formData = new FormData();
 
-        // 基本情報
+        // 基本情報（既存の公開設定を維持）
         formData.append('recipe_name', data.recipe_name);
         formData.append('recipe_category_id', data.recipe_category_id);
         formData.append('serving_size', data.serving_size);
         formData.append('recommended_points', data.recommended_points);
-        formData.append('publish_flg', publish ? '1' : '0');
+        formData.append('publish_flg', data.publish_flg ? '1' : '0');
 
         // レシピ画像
         if (data.recipe_image) {
@@ -377,7 +366,7 @@ export default function RecipeEdit({ recipe, recipeIngredients, instructions: in
                         <div
                             className="relative w-full aspect-video rounded-lg border-2 border-dashed flex items-center justify-center cursor-pointer overflow-hidden"
                             style={{ borderColor: 'var(--gray)' }}
-                            onClick={() => document.getElementById('recipe-image-input')?.click()}
+                            onClick={() => !imagePreview && document.getElementById('recipe-image-input')?.click()}
                         >
                             {imagePreview ? (
                                 <img src={imagePreview} alt="プレビュー" className="w-full h-full object-cover" />
@@ -390,6 +379,16 @@ export default function RecipeEdit({ recipe, recipeIngredients, instructions: in
                                 </div>
                             )}
                         </div>
+                        {imagePreview && (
+                            <button
+                                type="button"
+                                onClick={() => document.getElementById('recipe-image-input')?.click()}
+                                className="mt-3 w-full py-2 rounded-lg font-medium text-white"
+                                style={{ backgroundColor: 'var(--main-color)' }}
+                            >
+                                画像を変更
+                            </button>
+                        )}
                         <input
                             id="recipe-image-input"
                             type="file"
@@ -553,7 +552,7 @@ export default function RecipeEdit({ recipe, recipeIngredients, instructions: in
                                         <div
                                             className="relative w-full aspect-video rounded-lg border-2 border-dashed flex items-center justify-center cursor-pointer overflow-hidden"
                                             style={{ borderColor: 'var(--gray)' }}
-                                            onClick={() => document.getElementById(`instruction-image-${index}`)?.click()}
+                                            onClick={() => !inst.image_preview && document.getElementById(`instruction-image-${index}`)?.click()}
                                         >
                                             {inst.image_preview ? (
                                                 <img src={inst.image_preview} alt={`手順${inst.instruction_no}`} className="w-full h-full object-cover" />
@@ -566,6 +565,16 @@ export default function RecipeEdit({ recipe, recipeIngredients, instructions: in
                                                 </div>
                                             )}
                                         </div>
+                                        {inst.image_preview && (
+                                            <button
+                                                type="button"
+                                                onClick={() => document.getElementById(`instruction-image-${index}`)?.click()}
+                                                className="mt-2 w-full py-2 rounded-lg font-medium text-white text-sm"
+                                                style={{ backgroundColor: 'var(--main-color)' }}
+                                            >
+                                                画像を変更
+                                            </button>
+                                        )}
                                         <input
                                             id={`instruction-image-${index}`}
                                             type="file"
@@ -687,43 +696,6 @@ export default function RecipeEdit({ recipe, recipeIngredients, instructions: in
                             >
                                 追加する
                                 {tempSelectedIngredients.size > 0 && ` (${tempSelectedIngredients.size}個)`}
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {/* 公開確認モーダル */}
-            {showPublishModal && (
-                <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-                    <div className="bg-white rounded-2xl p-6 max-w-sm w-full">
-                        <h3 className="font-bold text-lg mb-4" style={{ color: 'var(--black)' }}>
-                            レシピを公開しますか？
-                        </h3>
-                        <p className="text-sm mb-6" style={{ color: 'var(--dark-gray)' }}>
-                            公開すると他のユーザーがこのレシピを見ることができます
-                        </p>
-                        <div className="space-y-2">
-                            <button
-                                onClick={() => handleSubmit(true)}
-                                className="w-full py-3 rounded-lg font-bold text-white"
-                                style={{ backgroundColor: 'var(--main-color)' }}
-                            >
-                                公開する
-                            </button>
-                            <button
-                                onClick={() => handleSubmit(false)}
-                                className="w-full py-3 rounded-lg font-bold"
-                                style={{ backgroundColor: 'var(--light-gray)', color: 'var(--dark-gray)' }}
-                            >
-                                非公開で保存
-                            </button>
-                            <button
-                                onClick={() => setShowPublishModal(false)}
-                                className="w-full py-3 text-sm"
-                                style={{ color: 'var(--dark-gray)' }}
-                            >
-                                キャンセル
                             </button>
                         </div>
                     </div>
