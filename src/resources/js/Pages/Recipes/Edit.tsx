@@ -121,6 +121,9 @@ export default function RecipeEdit({ recipe, recipeIngredients, instructions: in
     const [showSearchSuggestions, setShowSearchSuggestions] = useState(false);
     const searchInputRef = useRef<HTMLDivElement>(null);
 
+    // 削除確認モーダルの表示状態
+    const [showDeleteModal, setShowDeleteModal] = useState(false);
+
     /**
      * 戻るボタン
      */
@@ -262,6 +265,17 @@ export default function RecipeEdit({ recipe, recipeIngredients, instructions: in
             newInstructions[index].image_preview = null;
             setData('instructions', newInstructions);
         }
+    };
+
+    /**
+     * レシピ削除
+     */
+    const handleDelete = () => {
+        router.delete(route('recipes.destroy', recipe.id), {
+            onSuccess: () => {
+                setShowDeleteModal(false);
+            }
+        });
     };
 
     /**
@@ -714,6 +728,17 @@ export default function RecipeEdit({ recipe, recipeIngredients, instructions: in
                     >
                         {processing ? '保存中...' : '保存する'}
                     </button>
+
+                    {/* 削除ボタン */}
+                    <button
+                        type="button"
+                        onClick={() => setShowDeleteModal(true)}
+                        disabled={processing}
+                        className="w-full py-3 rounded-lg font-bold text-white shadow-md mt-3"
+                        style={{ backgroundColor: '#ef4444' }}
+                    >
+                        削除する
+                    </button>
                 </div>
             </main>
 
@@ -863,6 +888,49 @@ export default function RecipeEdit({ recipe, recipeIngredients, instructions: in
                             >
                                 追加する
                                 {tempSelectedIngredients.size > 0 && ` (${tempSelectedIngredients.size}個)`}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* 削除確認モーダル */}
+            {showDeleteModal && (
+                <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+                    <div className="bg-white w-full max-w-md rounded-2xl overflow-hidden">
+                        {/* モーダルヘッダー */}
+                        <div className="p-6 border-b" style={{ borderColor: 'var(--gray)' }}>
+                            <h3 className="font-bold text-lg text-center" style={{ color: 'var(--black)' }}>
+                                レシピを削除しますか？
+                            </h3>
+                        </div>
+
+                        {/* メッセージ */}
+                        <div className="p-6">
+                            <p className="text-center" style={{ color: 'var(--dark-gray)' }}>
+                                この操作は取り消せません。<br />
+                                本当に「{recipe.recipe_name}」を削除しますか？
+                            </p>
+                        </div>
+
+                        {/* アクションボタン */}
+                        <div className="p-4 border-t space-y-2" style={{ borderColor: 'var(--gray)' }}>
+                            <button
+                                onClick={handleDelete}
+                                className="w-full py-3 rounded-lg font-bold transition-all active:scale-95"
+                                style={{
+                                    backgroundColor: '#ef4444',
+                                    color: 'white'
+                                }}
+                            >
+                                削除する
+                            </button>
+                            <button
+                                onClick={() => setShowDeleteModal(false)}
+                                className="w-full py-3 text-sm"
+                                style={{ color: 'var(--dark-gray)' }}
+                            >
+                                キャンセル
                             </button>
                         </div>
                     </div>
