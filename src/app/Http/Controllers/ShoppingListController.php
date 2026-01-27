@@ -24,38 +24,80 @@ class ShoppingListController extends Controller
             ->orderBy('created_at', 'desc')
             ->get();
 
+        // 材料マスタとカテゴリを取得
+        $ingredients = Ingredient::with('category')->orderBy('name')->get();
+        $ingredientCategories = \App\Models\IngredientCategory::orderBy('name')->get();
+
         return Inertia::render('Mobile/ShoppingLists', [
-            'shoppingLists' => $shoppingLists,
+            'shoppingLists' => $shoppingLists->map(fn($item) => [
+                'id' => $item->id,
+                'ingredients_id' => $item->ingredients_id,
+                'check_flg' => $item->check_flg,
+                'user_id' => $item->user_id,
+                'created_at' => $item->created_at,
+                'ingredient' => $item->ingredient ? [
+                    'id' => $item->ingredient->id,
+                    'ingredient_name' => $item->ingredient->name,
+                    'ingredient_category_id' => $item->ingredient->ingredient_category_id,
+                    'category' => $item->ingredient->category ? [
+                        'id' => $item->ingredient->category->id,
+                        'category_name' => $item->ingredient->category->name,
+                    ] : null,
+                ] : null,
+            ]),
+            'ingredients' => $ingredients->map(fn($ing) => [
+                'id' => $ing->id,
+                'name' => $ing->name,
+                'ingredient_category_id' => $ing->ingredient_category_id,
+            ]),
+            'ingredientCategories' => $ingredientCategories->map(fn($cat) => [
+                'id' => $cat->id,
+                'name' => $cat->name,
+            ]),
         ]);
     }
 
     /**
-     * 買い物リストに追加
+     * 買い物リストに追加（複数対応）
      */
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'ingredient_id' => 'required|exists:ingredients,id',
+            'ingredient_ids' => 'required|array',
+            'ingredient_ids.*' => 'required|exists:ingredients,id',
         ]);
 
         $userId = $request->user()->id;
 
-        // 既に同じ材料が買い物リストにあるか確認
-        $exists = ShoppingList::where('user_id', $userId)
-            ->where('ingredients_id', $validated['ingredient_id'])
-            ->exists();
+        $addedCount = 0;
+        $skippedCount = 0;
 
-        if ($exists) {
-            return back()->with('error', '既に買い物リストに追加されています');
+        foreach ($validated['ingredient_ids'] as $ingredientId) {
+            // 既に同じ材料が買い物リストにあるか確認
+            $exists = ShoppingList::where('user_id', $userId)
+                ->where('ingredients_id', $ingredientId)
+                ->exists();
+
+            if ($exists) {
+                $skippedCount++;
+                continue;
+            }
+
+            ShoppingList::create([
+                'ingredients_id' => $ingredientId,
+                'user_id' => $userId,
+                'check_flg' => 0,
+            ]);
+
+            $addedCount++;
         }
 
-        ShoppingList::create([
-            'ingredients_id' => $validated['ingredient_id'],
-            'user_id' => $userId,
-            'check_flg' => 0,
-        ]);
+        $message = "{$addedCount}個の材料を買い物リストに追加しました";
+        if ($skippedCount > 0) {
+            $message .= "（{$skippedCount}個は既に追加済み）";
+        }
 
-        return back()->with('success', '買い物リストに追加しました');
+        return back()->with('success', $message);
     }
 
     /**

@@ -12,7 +12,7 @@ class Ingredient extends Model
     protected $table = 'ingredients'; 
 
     protected $fillable = [
-        'ingredients_name',
+        'name',
         'ingredients_category_id',
         'ingredients_image_url',
         'user_id',

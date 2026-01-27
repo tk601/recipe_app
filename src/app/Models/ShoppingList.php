@@ -8,7 +8,10 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 // 買い物リスト
 class ShoppingList extends Model
 {
-    protected $table = 'shopping_lists'; 
+    protected $table = 'shopping_lists';
+
+    // updated_atカラムが存在しないため、created_atのみ使用
+    const UPDATED_AT = null;
 
     protected $fillable = [
         'ingredients_id',

@@ -3,11 +3,10 @@ import Header from '../../Components/Mobile/Header';
 import Footer from '../../Components/Mobile/Footer';
 import Recipe from './Recipe';
 import Refrigerators from './Refrigerators';
-import ShoppingLists from './ShoppingLists';
 import ProfilePage from './ProfilePage';
 
 const MobileMain = () => {
-    // Footerボタンの画面繊維
+    // Footerボタンの画面遷移
     const [currentPage, setCurrentPage] = useState('refrigerators');
     const renderPage = () => {
         switch(currentPage) {
@@ -16,7 +15,8 @@ const MobileMain = () => {
             case 'refrigerators':
                 return <Refrigerators />;
             case 'shoppingLists':
-                return <ShoppingLists />;
+                // ShoppingListsはInertia.jsページコンポーネントなので、ここでは表示しない
+                return <div>買い物リストページへ遷移してください</div>;
             case 'profile':
                 return <ProfilePage />;
             default:
@@ -31,7 +31,7 @@ const MobileMain = () => {
             <main className="flex-1 overflow-auto p-4">
                 {renderPage()}
             </main>
-            <Footer currentPage={currentPage} setCurrentPage={setCurrentPage} />
+            <Footer currentPage={currentPage} />
         </div>
     );
 };
