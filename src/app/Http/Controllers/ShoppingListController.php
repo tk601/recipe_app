@@ -28,11 +28,16 @@ class ShoppingListController extends Controller
         $ingredients = Ingredient::with('category')->orderBy('name')->get();
         $ingredientCategories = \App\Models\IngredientCategory::orderBy('name')->get();
 
+        // ユーザーの冷蔵庫にある材料IDのリストを取得
+        $refrigeratorIngredientIds = Refrigerator::where('user_id', $userId)
+            ->pluck('ingredients_id')
+            ->toArray();
+
         return Inertia::render('Mobile/ShoppingLists', [
             'shoppingLists' => $shoppingLists->map(fn($item) => [
                 'id' => $item->id,
                 'ingredients_id' => $item->ingredients_id,
-                'check_flg' => $item->check_flg,
+                'custom_item' => $item->custom_item,
                 'user_id' => $item->user_id,
                 'created_at' => $item->created_at,
                 'ingredient' => $item->ingredient ? [
@@ -44,6 +49,8 @@ class ShoppingListController extends Controller
                         'category_name' => $item->ingredient->category->name,
                     ] : null,
                 ] : null,
+                // 冷蔵庫に在庫があるかどうか
+                'in_refrigerator' => $item->ingredients_id ? in_array($item->ingredients_id, $refrigeratorIngredientIds) : false,
             ]),
             'ingredients' => $ingredients->map(fn($ing) => [
                 'id' => $ing->id,
@@ -58,13 +65,14 @@ class ShoppingListController extends Controller
     }
 
     /**
-     * 買い物リストに追加（複数対応）
+     * 買い物リストに追加（複数対応 + 自由入力対応）
      */
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'ingredient_ids' => 'required|array',
+            'ingredient_ids' => 'nullable|array',
             'ingredient_ids.*' => 'required|exists:ingredients,id',
+            'custom_item' => 'nullable|string|max:255',
         ]);
 
         $userId = $request->user()->id;
@@ -72,27 +80,39 @@ class ShoppingListController extends Controller
         $addedCount = 0;
         $skippedCount = 0;
 
-        foreach ($validated['ingredient_ids'] as $ingredientId) {
-            // 既に同じ材料が買い物リストにあるか確認
-            $exists = ShoppingList::where('user_id', $userId)
-                ->where('ingredients_id', $ingredientId)
-                ->exists();
+        // 材料マスタから選択された場合
+        if (!empty($validated['ingredient_ids'])) {
+            foreach ($validated['ingredient_ids'] as $ingredientId) {
+                // 既に同じ材料が買い物リストにあるか確認
+                $exists = ShoppingList::where('user_id', $userId)
+                    ->where('ingredients_id', $ingredientId)
+                    ->exists();
 
-            if ($exists) {
-                $skippedCount++;
-                continue;
+                if ($exists) {
+                    $skippedCount++;
+                    continue;
+                }
+
+                ShoppingList::create([
+                    'ingredients_id' => $ingredientId,
+                    'user_id' => $userId,
+                ]);
+
+                $addedCount++;
             }
+        }
 
+        // 自由入力項目がある場合
+        if (!empty($validated['custom_item'])) {
             ShoppingList::create([
-                'ingredients_id' => $ingredientId,
+                'custom_item' => $validated['custom_item'],
                 'user_id' => $userId,
-                'check_flg' => 0,
             ]);
 
             $addedCount++;
         }
 
-        $message = "{$addedCount}個の材料を買い物リストに追加しました";
+        $message = "{$addedCount}個のアイテムを買い物リストに追加しました";
         if ($skippedCount > 0) {
             $message .= "（{$skippedCount}個は既に追加済み）";
         }
@@ -137,8 +157,13 @@ class ShoppingListController extends Controller
             ->whereIn('id', $validated['ids'])
             ->get();
 
-        // 冷蔵庫に追加
+        // 冷蔵庫に追加（材料IDがある項目のみ）
         foreach ($shoppingListItems as $item) {
+            // 自由入力項目は冷蔵庫に移動できないのでスキップ
+            if (empty($item->ingredients_id)) {
+                continue;
+            }
+
             // 既に冷蔵庫にある場合はスキップ
             $exists = Refrigerator::where('user_id', $userId)
                 ->where('ingredients_id', $item->ingredients_id)

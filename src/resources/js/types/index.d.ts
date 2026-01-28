@@ -19,11 +19,12 @@ export interface Ingredient {
 
 export interface ShoppingList {
     id: number;
-    ingredients_id: number;
-    check_flg: number;
+    ingredients_id: number | null;
+    custom_item: string | null;
     user_id: number;
     created_at: string;
     ingredient?: Ingredient;
+    in_refrigerator: boolean;
 }
 
 export type PageProps<
