@@ -843,7 +843,7 @@ export default function RecipeCreate({ ingredients, ingredientCategories, recipe
                                 className="w-full py-3 rounded-lg font-bold"
                                 style={{ backgroundColor: 'var(--light-gray)', color: 'var(--dark-gray)' }}
                             >
-                                非公開で保存
+                                自分専用レシピに保存
                             </button>
                             <button
                                 onClick={() => setShowPublishModal(false)}
