@@ -629,6 +629,8 @@ class RecipeController extends Controller
         ]);
 
         $userId = Auth::id();
+        $addedCount = 0;
+        $skippedCount = 0;
 
         DB::beginTransaction();
 
@@ -645,14 +647,23 @@ class RecipeController extends Controller
                     DB::table('shopping_lists')->insert([
                         'user_id' => $userId,
                         'ingredients_id' => $ingredientId,
-                        'check_flg' => 0,
                         'created_at' => now(),
                     ]);
+                    $addedCount++;
+                } else {
+                    $skippedCount++;
                 }
             }
 
             DB::commit();
-            return redirect()->back()->with('success', '買い物リストに追加しました');
+
+            // 追加件数に応じてメッセージを変更
+            $message = "{$addedCount}個の食材を買い物リストに追加しました";
+            if ($skippedCount > 0) {
+                $message .= "（{$skippedCount}個は既に追加済み）";
+            }
+
+            return redirect()->back()->with('success', $message);
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('買い物リスト追加エラー: ' . $e->getMessage());

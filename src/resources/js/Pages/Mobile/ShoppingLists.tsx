@@ -294,7 +294,7 @@ const ShoppingLists = ({ shoppingLists, ingredients, ingredientCategories }: Sho
                                 onClick={openIngredientModal}
                                 className="flex items-center gap-1 px-3 py-2 rounded-lg text-sm font-medium transition-all"
                                 style={{
-                                    backgroundColor: 'var(--sub-color)',
+                                    backgroundColor: 'var(--main-color)',
                                     color: 'white'
                                 }}
                             >
