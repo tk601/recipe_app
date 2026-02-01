@@ -82,7 +82,17 @@ export default function RecipeShow({ recipe, ingredients, instructions }: Props)
      * 前の画面に戻る
      */
     const handleBack = () => {
-        router.visit(route('recipes.index', { category: recipe.recipe_category_id }));
+        // URLパラメータから遷移元を確認
+        const urlParams = new URLSearchParams(window.location.search);
+        const from = urlParams.get('from');
+
+        // プロフィール画面から来た場合はプロフィール画面に戻る
+        if (from === 'profile') {
+            router.visit(route('mobile.profile'));
+        } else {
+            // それ以外はレシピ一覧に戻る
+            router.visit(route('recipes.index', { category: recipe.recipe_category_id }));
+        }
     };
 
     /**

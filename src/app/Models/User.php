@@ -47,4 +47,28 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
+
+    /**
+     * ユーザーが作成したレシピを取得
+     */
+    public function recipes()
+    {
+        return $this->hasMany(Recipe::class);
+    }
+
+    /**
+     * ユーザーがいいねしたレシピを取得
+     */
+    public function likedRecipes()
+    {
+        return $this->belongsToMany(Recipe::class, 'goods', 'user_id', 'recipe_id');
+    }
+
+    /**
+     * ユーザーがいいねした履歴を取得
+     */
+    public function goods()
+    {
+        return $this->hasMany(Good::class);
+    }
 }

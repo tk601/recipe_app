@@ -33,6 +33,12 @@ Route::middleware('auth')->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
+    // モバイル用プロフィール画面
+    Route::get('/mobile/profile', [ProfileController::class, 'show'])->name('mobile.profile');
+    Route::post('/profile/update-profile', [ProfileController::class, 'updateProfile'])->name('profile.update-profile');
+    Route::post('/profile/update-image', [ProfileController::class, 'updateProfileImage'])->name('profile.update-image');
+    Route::post('/profile/update-password', [ProfileController::class, 'updatePassword'])->name('profile.update-password');
+
     // 材料管理のルート
     Route::resource('ingredients', IngredientController::class);
 

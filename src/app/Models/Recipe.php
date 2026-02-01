@@ -23,18 +23,43 @@ class Recipe extends Model
         'updated_at'
     ];
 
-    // public function user(): BelongsTo
-    // {
-    //     return $this->belongsTo(User::class);
-    // }
+    /**
+     * レシピの作成者を取得
+     */
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
+    }
 
-    // public function instructions(): HasMany
-    // {
-    //     return $this->hasMany(RecipeInstruction::class);
-    // }
+    /**
+     * レシピの調理手順を取得
+     */
+    public function instructions(): HasMany
+    {
+        return $this->hasMany(RecipeInstruction::class);
+    }
 
-    // public function goods(): HasMany
-    // {
-    //     return $this->hasMany(Good::class);
-    // }
+    /**
+     * レシピのいいねを取得
+     */
+    public function goods(): HasMany
+    {
+        return $this->hasMany(Good::class);
+    }
+
+    /**
+     * レシピの食材を取得
+     */
+    public function recipeIngredients(): HasMany
+    {
+        return $this->hasMany(RecipeIngredient::class);
+    }
+
+    /**
+     * レシピのカテゴリを取得
+     */
+    public function recipeCategory(): BelongsTo
+    {
+        return $this->belongsTo(RecipeCategory::class, 'recipe_category_id');
+    }
 }

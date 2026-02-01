@@ -24,13 +24,19 @@ class RecipeIngredient extends Model
         'unit',
     ];
 
-    // public function recipe(): BelongsTo
-    // {
-    //     return $this->belongsTo(Recipe::class);
-    // }
+    /**
+     * レシピを取得
+     */
+    public function recipe(): BelongsTo
+    {
+        return $this->belongsTo(Recipe::class);
+    }
 
-    // public function ingredient(): BelongsTo
-    // {
-    //     return $this->belongsTo(Ingredient::class, 'ingredients_id');
-    // }
+    /**
+     * 食材を取得
+     */
+    public function ingredient(): BelongsTo
+    {
+        return $this->belongsTo(Ingredient::class, 'ingredients_id');
+    }
 }

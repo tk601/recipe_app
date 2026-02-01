@@ -74,7 +74,7 @@ const Footer = ({ currentPage = 'refrigerators' }: FooterProps) => {
 
                 {/* ユーザー */}
                 <Link
-                    href={route('profile.edit')}
+                    href={route('mobile.profile')}
                     className={`flex flex-col items-center p-3 w-full transition-colors ${
                         isActive('profile') ? '' : 'opacity-60'
                     }`}
