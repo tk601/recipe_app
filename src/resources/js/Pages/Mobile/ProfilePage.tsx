@@ -19,28 +19,9 @@ interface RecipeCategory {
     my_recipes_count: number;
 }
 
-interface Recipe {
-    id: number;
-    recipe_name: string;
-    recipe_image_url: string | null;
-    recipe_category_id: number;
-    recipe_category_name: string | null;
-    serving_size: number;
-    recommended_points: string | null;
-    publish_flg: boolean;
-    created_at: string;
-    user_name?: string;
-    ingredients_count: number;
-    likes_count: number;
-    is_liked: boolean;
-}
-
 interface Props {
     user: User;
     recipeCategories: RecipeCategory[];
-    selectedCategoryId: number | null;
-    myRecipes: Recipe[];
-    likedRecipes: Recipe[];
 }
 
 interface FlashMessages {
@@ -56,7 +37,7 @@ interface PageProps extends Props {
     [key: string]: any;
 }
 
-export default function ProfilePage({ user, recipeCategories, selectedCategoryId, myRecipes, likedRecipes }: Props) {
+export default function ProfilePage({ user, recipeCategories }: Props) {
     // フラッシュメッセージを取得
     const page = usePage<PageProps>();
     const flash = page.props.flash;
@@ -67,29 +48,14 @@ export default function ProfilePage({ user, recipeCategories, selectedCategoryId
     const [isDeleteAccountModalOpen, setIsDeleteAccountModalOpen] = useState(false);
     const [showFlash, setShowFlash] = useState(false);
 
-    // レシピフィルター: 'shared' | 'private'
-    const [myRecipeFilter, setMyRecipeFilter] = useState<'all' | 'shared' | 'private'>('all');
 
     /**
-     * カテゴリ選択時の処理
+     * カテゴリ選択時の処理（レシピ画面に移動）
      */
     const handleCategorySelect = (categoryId: number) => {
-        router.get(route('mobile.profile'), {
+        router.get(route('recipes.index', {
             category: categoryId
-        }, {
-            preserveState: false,
-            preserveScroll: false,
-        });
-    };
-
-    /**
-     * すべてのレシピ表示に戻る
-     */
-    const handleShowAllRecipes = () => {
-        router.get(route('mobile.profile'), {}, {
-            preserveState: false,
-            preserveScroll: false,
-        });
+        }));
     };
 
     // フォームデータ
@@ -215,23 +181,6 @@ export default function ProfilePage({ user, recipeCategories, selectedCategoryId
             preserveScroll: true,
         });
     };
-
-    /**
-     * レシピ詳細画面に遷移（from=profileパラメータ付き）
-     */
-    const handleRecipeClick = (recipeId: number) => {
-        router.get(route('recipes.show', { id: recipeId, from: 'profile' }));
-    };
-
-    /**
-     * フィルター後のレシピリスト
-     */
-    const filteredMyRecipes = myRecipes.filter((recipe) => {
-        if (myRecipeFilter === 'all') return true;
-        if (myRecipeFilter === 'shared') return recipe.publish_flg;
-        if (myRecipeFilter === 'private') return !recipe.publish_flg;
-        return true;
-    });
 
     return (
         <>
@@ -449,19 +398,7 @@ export default function ProfilePage({ user, recipeCategories, selectedCategoryId
                     <div className="bg-white rounded-lg shadow p-6">
                         <h2 className="text-lg font-bold text-[var(--black)] mb-4">作成したレシピ</h2>
 
-                        {/* カテゴリが選択されている場合は戻るボタンを表示 */}
-                        {selectedCategoryId && (
-                            <button
-                                onClick={handleShowAllRecipes}
-                                className="mb-4 px-4 py-2 bg-gray-100 text-[var(--black)] rounded-lg hover:bg-gray-200 transition flex items-center gap-2"
-                            >
-                                <span>←</span>
-                                <span>すべてのカテゴリに戻る</span>
-                            </button>
-                        )}
-
-                        {/* カテゴリ選択されていない場合はカテゴリ一覧を表示 */}
-                        {!selectedCategoryId && (
+                        {/* カテゴリ一覧を表示 */}
                             <div className="mb-6">
                                 <h3 className="text-sm font-medium text-gray-600 mb-3">カテゴリから選ぶ</h3>
                                 <div className="grid grid-cols-3 gap-3">
@@ -488,130 +425,6 @@ export default function ProfilePage({ user, recipeCategories, selectedCategoryId
                                     ))}
                                 </div>
                             </div>
-                        )}
-
-                        {/* フィルターボタン */}
-                        <div className="flex gap-2 mb-4">
-                            <button
-                                onClick={() => setMyRecipeFilter('all')}
-                                className={`flex-1 py-2 rounded-lg transition ${
-                                    myRecipeFilter === 'all'
-                                        ? 'bg-[var(--main-color)] text-white'
-                                        : 'bg-gray-200 text-[var(--black)]'
-                                }`}
-                            >
-                                すべて ({myRecipes.length})
-                            </button>
-                            <button
-                                onClick={() => setMyRecipeFilter('shared')}
-                                className={`flex-1 py-2 rounded-lg transition ${
-                                    myRecipeFilter === 'shared'
-                                        ? 'bg-[var(--main-color)] text-white'
-                                        : 'bg-gray-200 text-[var(--black)]'
-                                }`}
-                            >
-                                共有中 ({myRecipes.filter(r => r.publish_flg).length})
-                            </button>
-                            <button
-                                onClick={() => setMyRecipeFilter('private')}
-                                className={`flex-1 py-2 rounded-lg transition ${
-                                    myRecipeFilter === 'private'
-                                        ? 'bg-[var(--main-color)] text-white'
-                                        : 'bg-gray-200 text-[var(--black)]'
-                                }`}
-                            >
-                                非公開 ({myRecipes.filter(r => !r.publish_flg).length})
-                            </button>
-                        </div>
-
-                        {/* レシピリスト */}
-                        {filteredMyRecipes.length === 0 ? (
-                            <p className="text-center text-gray-500 py-8">レシピがありません</p>
-                        ) : (
-                            <div className="space-y-3">
-                                {filteredMyRecipes.map((recipe) => (
-                                    <div
-                                        key={recipe.id}
-                                        onClick={() => handleRecipeClick(recipe.id)}
-                                        className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 cursor-pointer transition"
-                                    >
-                                        <div className="flex items-start gap-3">
-                                            {recipe.recipe_image_url ? (
-                                                <img
-                                                    src={recipe.recipe_image_url}
-                                                    alt={recipe.recipe_name}
-                                                    className="w-20 h-20 rounded-lg object-cover"
-                                                />
-                                            ) : (
-                                                <div className="w-20 h-20 bg-gray-200 rounded-lg flex items-center justify-center text-2xl">
-                                                    🍳
-                                                </div>
-                                            )}
-                                            <div className="flex-1">
-                                                <h3 className="font-bold text-[var(--black)] mb-1">{recipe.recipe_name}</h3>
-                                                <div className="flex items-center gap-2 text-sm text-gray-600">
-                                                    <span>🥘 {recipe.ingredients_count}品</span>
-                                                    <span>❤️ {recipe.likes_count}</span>
-                                                    {recipe.publish_flg ? (
-                                                        <span className="text-green-600 font-medium">共有中</span>
-                                                    ) : (
-                                                        <span className="text-gray-500 font-medium">非公開</span>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-                    </div>
-
-                    {/* いいねしたレシピセクション */}
-                    <div className="bg-white rounded-lg shadow p-6">
-                        <h2 className="text-lg font-bold text-[var(--black)] mb-4">
-                            いいねしたレシピ ({likedRecipes.length})
-                        </h2>
-
-                        {likedRecipes.length === 0 ? (
-                            <p className="text-center text-gray-500 py-8">いいねしたレシピがありません</p>
-                        ) : (
-                            <div className="space-y-3">
-                                {likedRecipes.map((recipe) => (
-                                    <div
-                                        key={recipe.id}
-                                        onClick={() => handleRecipeClick(recipe.id)}
-                                        className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 cursor-pointer transition"
-                                    >
-                                        <div className="flex items-start gap-3">
-                                            {recipe.recipe_image_url ? (
-                                                <img
-                                                    src={recipe.recipe_image_url}
-                                                    alt={recipe.recipe_name}
-                                                    className="w-20 h-20 rounded-lg object-cover"
-                                                />
-                                            ) : (
-                                                <div className="w-20 h-20 bg-gray-200 rounded-lg flex items-center justify-center text-2xl">
-                                                    🍳
-                                                </div>
-                                            )}
-                                            <div className="flex-1">
-                                                <h3 className="font-bold text-[var(--black)] mb-1">{recipe.recipe_name}</h3>
-                                                <p className="text-sm text-gray-600 mb-1">by {recipe.user_name}</p>
-                                                {recipe.recipe_category_name && (
-                                                    <p className="text-xs text-gray-500 mb-1">
-                                                        {recipe.recipe_category_name}
-                                                    </p>
-                                                )}
-                                                <div className="flex items-center gap-2 text-sm text-gray-600">
-                                                    <span>🥘 {recipe.ingredients_count}品</span>
-                                                    <span>❤️ {recipe.likes_count}</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
                     </div>
 
                     {/* アカウント削除セクション */}

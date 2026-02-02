@@ -37,61 +37,6 @@ class ProfileController extends Controller
             ];
         });
 
-        // 選択されたカテゴリID（クエリパラメータから取得）
-        $selectedCategoryId = $request->query('category');
-
-        // ユーザーが作成したレシピを取得（共有・非共有含む）
-        $myRecipesQuery = $user->recipes()
-            ->with(['recipeIngredients.ingredient', 'goods', 'recipeCategory']);
-
-        // カテゴリでフィルタリング
-        if ($selectedCategoryId) {
-            $myRecipesQuery->where('recipe_category_id', $selectedCategoryId);
-        }
-
-        $myRecipes = $myRecipesQuery
-            ->orderBy('created_at', 'desc')
-            ->get()
-            ->map(function ($recipe) use ($user) {
-                return [
-                    'id' => $recipe->id,
-                    'recipe_name' => $recipe->recipe_name,
-                    'recipe_image_url' => $recipe->recipe_image_url,
-                    'recipe_category_id' => $recipe->recipe_category_id,
-                    'recipe_category_name' => $recipe->recipeCategory ? $recipe->recipeCategory->recipe_category_name : null,
-                    'serving_size' => $recipe->serving_size,
-                    'recommended_points' => $recipe->recommended_points,
-                    'publish_flg' => $recipe->publish_flg,
-                    'created_at' => $recipe->created_at,
-                    'ingredients_count' => $recipe->recipeIngredients->count(),
-                    'likes_count' => $recipe->goods->count(),
-                    'is_liked' => $recipe->goods->where('user_id', $user->id)->isNotEmpty(),
-                ];
-            });
-
-        // ユーザーがいいねしたレシピを取得
-        $likedRecipes = $user->likedRecipes()
-            ->with(['user', 'recipeIngredients.ingredient', 'goods', 'recipeCategory'])
-            ->orderBy('goods.created_at', 'desc')
-            ->get()
-            ->map(function ($recipe) use ($user) {
-                return [
-                    'id' => $recipe->id,
-                    'recipe_name' => $recipe->recipe_name,
-                    'recipe_image_url' => $recipe->recipe_image_url,
-                    'recipe_category_id' => $recipe->recipe_category_id,
-                    'recipe_category_name' => $recipe->recipeCategory ? $recipe->recipeCategory->recipe_category_name : null,
-                    'serving_size' => $recipe->serving_size,
-                    'recommended_points' => $recipe->recommended_points,
-                    'publish_flg' => $recipe->publish_flg,
-                    'created_at' => $recipe->created_at,
-                    'user_name' => $recipe->user->name,
-                    'ingredients_count' => $recipe->recipeIngredients->count(),
-                    'likes_count' => $recipe->goods->count(),
-                    'is_liked' => true,
-                ];
-            });
-
         // ソーシャルログインの判定（パスワードがnullの場合はソーシャルログイン）
         $isSocialLogin = is_null($user->password);
 
@@ -104,9 +49,6 @@ class ProfileController extends Controller
                 'is_social_login' => $isSocialLogin,
             ],
             'recipeCategories' => $recipeCategories,
-            'selectedCategoryId' => $selectedCategoryId ? (int)$selectedCategoryId : null,
-            'myRecipes' => $myRecipes,
-            'likedRecipes' => $likedRecipes,
         ]);
     }
 
