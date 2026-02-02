@@ -56,15 +56,24 @@ class RecipeController extends Controller
         $recipes = [];
 
         if ($selectedCategoryId) {
-            $recipes = Recipe::select(
+            // レシピクエリを作成
+            // 公開済みのレシピ + 自分の非公開レシピを取得
+            $query = Recipe::select(
                     'recipes.id as recipe_id',
                     'recipes.recipe_name',
                     'recipes.recipe_image_url',
-                    'recipes.recipe_category_id'
+                    'recipes.recipe_category_id',
+                    'recipes.user_id',
+                    'recipes.publish_flg'
                 )
                 ->where('recipe_category_id', $selectedCategoryId)
-                ->where('publish_flg', 1) // 公開済みのレシピのみ
-                ->orderBy('recipes.created_at', 'desc')
+                ->where(function ($query) use ($userId) {
+                    // 公開済みのレシピ または 自分のレシピ
+                    $query->where('publish_flg', 1)
+                        ->orWhere('user_id', $userId);
+                });
+
+            $recipes = $query->orderBy('recipes.created_at', 'desc')
                 ->get()
                 ->map(function ($recipe) use ($userId, $userIngredientIds) {
                     // レシピに必要な食材を取得
@@ -95,6 +104,9 @@ class RecipeController extends Controller
                         ->where('recipe_id', $recipe->recipe_id)
                         ->where('user_id', $userId)
                         ->exists();
+
+                    // 自分のレシピかどうかをチェック（整数型で比較）
+                    $recipe->is_my_recipe = (int)$recipe->user_id === (int)$userId;
 
                     return $recipe;
                 });

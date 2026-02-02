@@ -19,6 +19,7 @@ interface Recipe {
     can_cook: boolean;
     likes_count: number;
     is_liked: boolean;
+    is_my_recipe?: boolean;
 }
 
 interface Props {
@@ -46,8 +47,15 @@ export default function RecipesIndex({ categories, recipes, selectedCategoryId, 
     const page = usePage<PageProps>();
     const flash = page.props.flash;
 
-    // フィルターの状態管理: 'all' | 'cookable'
-    const [recipeFilter, setRecipeFilter] = useState<'cookable' | 'all'>('cookable');
+    // URLパラメータからフィルターを取得
+    const urlParams = new URLSearchParams(window.location.search);
+    const filterParam = urlParams.get('filter') as 'cookable' | 'all' | 'my_recipe' | null;
+
+    // フィルターの状態管理: 'all' | 'cookable' | 'my_recipe'
+    // URLパラメータがあればそれを使用、なければデフォルトの'cookable'
+    const [recipeFilter, setRecipeFilter] = useState<'cookable' | 'all' | 'my_recipe'>(
+        filterParam && ['cookable', 'all', 'my_recipe'].includes(filterParam) ? filterParam : 'cookable'
+    );
     // 検索キーワードの状態管理
     const [searchQuery, setSearchQuery] = useState('');
     // カテゴリの表示数管理
@@ -136,6 +144,9 @@ export default function RecipesIndex({ categories, recipes, selectedCategoryId, 
         // フィルター適用
         if (recipeFilter === 'cookable') {
             filtered = filtered.filter(recipe => recipe.can_cook);
+        } else if (recipeFilter === 'my_recipe') {
+            // マイレシピフィルター: user_idがログインユーザーと同じレシピのみ
+            filtered = filtered.filter(recipe => recipe.is_my_recipe);
         }
 
         // 検索キーワード適用
@@ -246,10 +257,10 @@ export default function RecipesIndex({ categories, recipes, selectedCategoryId, 
                         </div>
 
                         {/* フィルターボタン */}
-                        <div className="flex space-x-2 pb-3 px-0">
+                        <div className="flex space-x-2 pb-3 px-0 overflow-x-auto">
                             <button
                                 onClick={() => setRecipeFilter('cookable')}
-                                className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
+                                className={`px-4 py-2 rounded-full text-sm font-medium transition-all whitespace-nowrap ${
                                     recipeFilter === 'cookable' ? '' : 'opacity-60'
                                 }`}
                                 style={{
@@ -261,7 +272,7 @@ export default function RecipesIndex({ categories, recipes, selectedCategoryId, 
                             </button>
                             <button
                                 onClick={() => setRecipeFilter('all')}
-                                className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
+                                className={`px-4 py-2 rounded-full text-sm font-medium transition-all whitespace-nowrap ${
                                     recipeFilter === 'all' ? '' : 'opacity-60'
                                 }`}
                                 style={{
@@ -270,6 +281,18 @@ export default function RecipesIndex({ categories, recipes, selectedCategoryId, 
                                 }}
                             >
                                 全て表示
+                            </button>
+                            <button
+                                onClick={() => setRecipeFilter('my_recipe')}
+                                className={`px-4 py-2 rounded-full text-sm font-medium transition-all whitespace-nowrap ${
+                                    recipeFilter === 'my_recipe' ? '' : 'opacity-60'
+                                }`}
+                                style={{
+                                    backgroundColor: recipeFilter === 'my_recipe' ? 'var(--main-color)' : 'var(--light-gray)',
+                                    color: recipeFilter === 'my_recipe' ? 'white' : 'var(--dark-gray)'
+                                }}
+                            >
+                                マイレシピ
                             </button>
                         </div>
                     </div>
@@ -505,6 +528,8 @@ export default function RecipesIndex({ categories, recipes, selectedCategoryId, 
                                 <p style={{ color: 'var(--dark-gray)' }}>
                                     {recipeFilter === 'cookable'
                                         ? '作れる料理がありません'
+                                        : recipeFilter === 'my_recipe'
+                                        ? 'マイレシピがありません'
                                         : 'レシピがありません'}
                                 </p>
                             </div>

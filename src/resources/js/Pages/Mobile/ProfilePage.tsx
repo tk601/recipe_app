@@ -50,11 +50,12 @@ export default function ProfilePage({ user, recipeCategories }: Props) {
 
 
     /**
-     * カテゴリ選択時の処理（レシピ画面に移動）
+     * カテゴリ選択時の処理（レシピ画面に移動してマイレシピフィルターを適用）
      */
     const handleCategorySelect = (categoryId: number) => {
         router.get(route('recipes.index', {
-            category: categoryId
+            category: categoryId,
+            filter: 'my_recipe' // マイレシピフィルターを適用
         }));
     };
 
