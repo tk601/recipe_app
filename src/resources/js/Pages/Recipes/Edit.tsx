@@ -425,7 +425,7 @@ export default function RecipeEdit({ recipe, recipeIngredients, instructions: in
 
     return (
         <div
-            className="min-h-screen pb-20"
+            className="min-h-screen pb-20 md:pb-8"
             style={{ backgroundColor: 'var(--base-color)' }}
         >
             <Head title="レシピ編集 - ごはんどき" />
@@ -454,7 +454,7 @@ export default function RecipeEdit({ recipe, recipeIngredients, instructions: in
             </header>
 
             {/* メインコンテンツ */}
-            <main className="max-w-7xl mx-auto px-4 py-4">
+            <main className="max-w-4xl mx-auto px-4 py-4 md:py-8">
                 <div className="space-y-6">
                     {/* メイン画像 */}
                     <div className="bg-white rounded-lg shadow-sm border p-4" style={{ borderColor: 'var(--gray)' }}>

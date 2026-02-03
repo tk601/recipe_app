@@ -164,7 +164,7 @@ export default function RecipesIndex({ categories, recipes, selectedCategoryId, 
 
     return (
         <div
-            className="min-h-screen pb-20"
+            className="min-h-screen pb-20 md:pb-8"
             style={{ backgroundColor: 'var(--base-color)' }}
         >
             <Head title="レシピ - ごはんどき" />
@@ -309,7 +309,7 @@ export default function RecipesIndex({ categories, recipes, selectedCategoryId, 
                     >
                         カテゴリを選択
                     </h2>
-                    <div className="grid grid-cols-2 gap-4 mb-4">
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-4">
                         {displayedCategories.map((category) => (
                             <button
                                 key={category.id}
@@ -361,7 +361,7 @@ export default function RecipesIndex({ categories, recipes, selectedCategoryId, 
                             お気に入り
                         </h2>
                         {favoriteRecipes.length > 0 ? (
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                                 {favoriteRecipes.map((recipe) => (
                                     <div
                                         key={recipe.recipe_id}
@@ -451,7 +451,7 @@ export default function RecipesIndex({ categories, recipes, selectedCategoryId, 
             {selectedCategoryId && (
                 <main className="max-w-7xl mx-auto px-4 py-4">
                         {filteredRecipes.length > 0 ? (
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                                 {filteredRecipes.map((recipe) => (
                                     <div
                                         key={recipe.recipe_id}
@@ -540,7 +540,7 @@ export default function RecipesIndex({ categories, recipes, selectedCategoryId, 
             {/* レシピ作成ボタン（浮動） */}
             <button
                 onClick={() => router.visit(route('recipes.create'))}
-                className="fixed bottom-24 right-4 px-4 py-3 rounded-full shadow-lg flex items-center gap-2 transition-all duration-200 hover:shadow-xl active:scale-95 z-20"
+                className="fixed bottom-24 md:bottom-8 right-4 md:right-8 px-4 py-3 rounded-full shadow-lg flex items-center gap-2 transition-all duration-200 hover:shadow-xl active:scale-95 z-20"
                 style={{ backgroundColor: 'var(--main-color)' }}
             >
                 <span className="text-white font-bold text-sm">レシピ作成</span>

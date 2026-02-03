@@ -199,7 +199,7 @@ export default function RecipeShow({ recipe, ingredients, instructions }: Props)
 
     return (
         <div
-            className="min-h-screen pb-20"
+            className="min-h-screen pb-20 md:pb-8"
             style={{ backgroundColor: 'var(--base-color)' }}
         >
             <Head title={`${recipe.recipe_name} - ごはんどき`} />
@@ -224,7 +224,7 @@ export default function RecipeShow({ recipe, ingredients, instructions }: Props)
             )}
 
             {/* レシピ画像ヘッダー */}
-            <div className="relative w-full" style={{ height: '300px' }}>
+            <div className="relative w-full md:max-w-6xl md:mx-auto md:mt-8 md:rounded-xl md:overflow-hidden" style={{ height: '300px' }}>
                 <img
                     src={recipe.recipe_image_url || '/images/no-image.png'}
                     alt={recipe.recipe_name}
@@ -276,9 +276,9 @@ export default function RecipeShow({ recipe, ingredients, instructions }: Props)
                 <div className="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-black/50 to-transparent"></div>
             </div>
 
-            <main className="max-w-7xl mx-auto px-4">
+            <main className="max-w-6xl mx-auto px-4">
                 {/* レシピ名といいね数 */}
-                <div className="bg-white rounded-t-3xl -mt-6 relative z-10 px-6 py-5 shadow-sm">
+                <div className="bg-white rounded-t-3xl md:rounded-xl -mt-6 md:mt-6 relative z-10 px-6 py-5 shadow-sm">
                     <h1
                         className="text-2xl font-bold mb-2"
                         style={{ color: 'var(--black)' }}
@@ -304,113 +304,122 @@ export default function RecipeShow({ recipe, ingredients, instructions }: Props)
                     </div>
                 </div>
 
-                {/* 材料一覧 */}
-                <div className="bg-white mt-4 rounded-lg shadow-sm p-6">
-                    <div className="flex justify-between items-center mb-4 pb-2 border-b" style={{ borderColor: 'var(--gray)' }}>
-                        <h2
-                            className="text-lg font-bold"
-                            style={{ color: 'var(--main-color)' }}
-                        >
-                            材料
-                        </h2>
-                        <button
-                            onClick={openRefrigeratorModal}
-                            className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors"
-                            style={{ backgroundColor: 'var(--main-color)', color: 'white' }}
-                        >
-                            <RefrigeratorIcon className="w-4 h-4" />
-                            冷蔵庫を確認
-                        </button>
+                {/* PC画面では2カラム、スマホでは1カラム */}
+                <div className="md:grid md:grid-cols-3 md:gap-6 mt-4">
+                    {/* 左カラム: 材料 (PC: 1/3, スマホ: 100%) */}
+                    <div className="md:col-span-1">
+                        {/* 材料一覧 */}
+                        <div className="bg-white rounded-lg shadow-sm p-6">
+                            <div className="flex justify-between items-center mb-4 pb-2 border-b" style={{ borderColor: 'var(--gray)' }}>
+                                <h2
+                                    className="text-lg font-bold"
+                                    style={{ color: 'var(--main-color)' }}
+                                >
+                                    材料
+                                </h2>
+                                <button
+                                    onClick={openRefrigeratorModal}
+                                    className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors"
+                                    style={{ backgroundColor: 'var(--main-color)', color: 'white' }}
+                                >
+                                    <RefrigeratorIcon className="w-4 h-4" />
+                                    冷蔵庫を確認
+                                </button>
+                            </div>
+                            <div className="space-y-3">
+                                {ingredients.map((ingredient, index) => (
+                                    <div
+                                        key={index}
+                                        className="flex justify-between items-center py-2"
+                                    >
+                                        <span
+                                            className="font-medium"
+                                            style={{ color: 'var(--black)' }}
+                                        >
+                                            {ingredient.ingredient_name}
+                                        </span>
+                                        <span
+                                            className="text-sm"
+                                            style={{ color: 'var(--dark-gray)' }}
+                                        >
+                                            {ingredient.quantity} {ingredient.unit}
+                                        </span>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
                     </div>
-                    <div className="space-y-3">
-                        {ingredients.map((ingredient, index) => (
-                            <div
-                                key={index}
-                                className="flex justify-between items-center py-2"
+
+                    {/* 右カラム: 調理手順とポイント (PC: 2/3, スマホ: 100%) */}
+                    <div className="md:col-span-2 mt-4 md:mt-0">
+                        {/* 調理手順 */}
+                        <div className="bg-white rounded-lg shadow-sm p-6">
+                            <h2
+                                className="text-lg font-bold mb-4 pb-2 border-b"
+                                style={{
+                                    color: 'var(--main-color)',
+                                    borderColor: 'var(--gray)'
+                                }}
                             >
-                                <span
-                                    className="font-medium"
+                                調理手順
+                            </h2>
+                            <div className="space-y-4">
+                                {instructions.map((instruction) => (
+                                    <div
+                                        key={instruction.instruction_no}
+                                        className="flex gap-4"
+                                    >
+                                        {/* ステップ番号 */}
+                                        <div
+                                            className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center font-bold text-white text-sm"
+                                            style={{ backgroundColor: 'var(--main-color)' }}
+                                        >
+                                            {instruction.instruction_no}
+                                        </div>
+
+                                        {/* 手順の説明 */}
+                                        <div className="flex-1">
+                                            <p
+                                                className="leading-relaxed"
+                                                style={{ color: 'var(--black)' }}
+                                            >
+                                                {instruction.description}
+                                            </p>
+                                            {instruction.instruction_image_url && (
+                                                <img
+                                                    src={instruction.instruction_image_url}
+                                                    alt={`手順${instruction.instruction_no}`}
+                                                    className="mt-2 rounded-lg w-full max-w-sm"
+                                                />
+                                            )}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* 調理のポイント */}
+                        {recipe.recommended_points && (
+                            <div className="bg-white mt-4 rounded-lg shadow-sm p-6 mb-4">
+                                <h2
+                                    className="text-lg font-bold mb-4 pb-2 border-b"
+                                    style={{
+                                        color: 'var(--main-color)',
+                                        borderColor: 'var(--gray)'
+                                    }}
+                                >
+                                    調理のポイント
+                                </h2>
+                                <p
+                                    className="leading-relaxed"
                                     style={{ color: 'var(--black)' }}
                                 >
-                                    {ingredient.ingredient_name}
-                                </span>
-                                <span
-                                    className="text-sm"
-                                    style={{ color: 'var(--dark-gray)' }}
-                                >
-                                    {ingredient.quantity} {ingredient.unit}
-                                </span>
+                                    {recipe.recommended_points}
+                                </p>
                             </div>
-                        ))}
+                        )}
                     </div>
                 </div>
-
-                {/* 調理手順 */}
-                <div className="bg-white mt-4 rounded-lg shadow-sm p-6">
-                    <h2
-                        className="text-lg font-bold mb-4 pb-2 border-b"
-                        style={{
-                            color: 'var(--main-color)',
-                            borderColor: 'var(--gray)'
-                        }}
-                    >
-                        調理手順
-                    </h2>
-                    <div className="space-y-4">
-                        {instructions.map((instruction) => (
-                            <div
-                                key={instruction.instruction_no}
-                                className="flex gap-4"
-                            >
-                                {/* ステップ番号 */}
-                                <div
-                                    className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center font-bold text-white text-sm"
-                                    style={{ backgroundColor: 'var(--main-color)' }}
-                                >
-                                    {instruction.instruction_no}
-                                </div>
-
-                                {/* 手順の説明 */}
-                                <div className="flex-1">
-                                    <p
-                                        className="leading-relaxed"
-                                        style={{ color: 'var(--black)' }}
-                                    >
-                                        {instruction.description}
-                                    </p>
-                                    {instruction.instruction_image_url && (
-                                        <img
-                                            src={instruction.instruction_image_url}
-                                            alt={`手順${instruction.instruction_no}`}
-                                            className="mt-2 rounded-lg w-full max-w-sm"
-                                        />
-                                    )}
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-
-                {/* 調理のポイント */}
-                {recipe.recommended_points && (
-                    <div className="bg-white mt-4 rounded-lg shadow-sm p-6 mb-4">
-                        <h2
-                            className="text-lg font-bold mb-4 pb-2 border-b"
-                            style={{
-                                color: 'var(--main-color)',
-                                borderColor: 'var(--gray)'
-                            }}
-                        >
-                            調理のポイント
-                        </h2>
-                        <p
-                            className="leading-relaxed"
-                            style={{ color: 'var(--black)' }}
-                        >
-                            {recipe.recommended_points}
-                        </p>
-                    </div>
-                )}
             </main>
 
             {/* 冷蔵庫確認モーダル */}
