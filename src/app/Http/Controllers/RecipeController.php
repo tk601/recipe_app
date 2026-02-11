@@ -112,13 +112,25 @@ class RecipeController extends Controller
                 });
         }
 
+        // カテゴリが選択されている場合、CategoryRecipesコンポーネントをレンダリング
+        if ($selectedCategoryId) {
+            $category = RecipeCategory::select('id', 'recipe_category_name', 'recipe_category_image_url')
+                ->where('id', $selectedCategoryId)
+                ->firstOrFail();
+
+            return Inertia::render('Recipes/CategoryRecipes', [
+                'category' => $category,
+                'recipes' => $recipes,
+            ]);
+        }
+
         // お気に入りレシピを取得
         $favoriteRecipes = $this->getFavoriteRecipes($userId, $userIngredientIds);
 
         return Inertia::render('Recipes/Index', [
             'categories' => $categories,
-            'recipes' => $recipes,
-            'selectedCategoryId' => $selectedCategoryId ? (int) $selectedCategoryId : null,
+            'recipes' => [],
+            'selectedCategoryId' => null,
             'favoriteRecipes' => $favoriteRecipes,
         ]);
     }
