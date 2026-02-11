@@ -95,17 +95,34 @@ export default function RecipesIndex({ categories, favoriteRecipes }: Props) {
     };
 
     /**
-     * 表示するカテゴリを決定（最大6個まで、もっと見るで全て表示）
+     * 画面サイズを判定（768px以上をPC画面とする）
      */
-    const displayedCategories = useMemo(() => {
-        const maxDisplay = 6;
-        return showAllCategories ? categories : categories.slice(0, maxDisplay);
-    }, [categories, showAllCategories]);
+    const [isDesktop, setIsDesktop] = useState(false);
+
+    useEffect(() => {
+        // 初回レンダリング時に画面サイズをチェック
+        const checkScreenSize = () => {
+            setIsDesktop(window.innerWidth >= 768);
+        };
+
+        checkScreenSize();
+        window.addEventListener('resize', checkScreenSize);
+
+        return () => window.removeEventListener('resize', checkScreenSize);
+    }, []);
 
     /**
-     * もっと見るボタンの表示判定
+     * 表示するカテゴリを決定（スマホ: 6個、PC: 8個まで、もっと見るで全て表示）
      */
-    const hasMoreCategories = categories.length > 6;
+    const displayedCategories = useMemo(() => {
+        const maxDisplay = isDesktop ? 8 : 6;
+        return showAllCategories ? categories : categories.slice(0, maxDisplay);
+    }, [categories, showAllCategories, isDesktop]);
+
+    /**
+     * もっと見るボタンの表示判定（スマホ: 6個以上、PC: 8個以上）
+     */
+    const hasMoreCategories = isDesktop ? categories.length > 8 : categories.length > 6;
 
     return (
         <div
