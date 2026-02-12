@@ -8,18 +8,14 @@ use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
-// Route::get('/', function () {
-//     return Inertia::render('RecipeMain');
-// });
-
-// ログイン機能をInertiaで作成した時に作成されたもの
+// ルートパス：ログイン状態によって画面を切り替える
 Route::get('/', function () {
-    return Inertia::render('Welcome', [
-        'canLogin' => Route::has('login'),
-        'canRegister' => Route::has('register'),
-        'laravelVersion' => Application::VERSION,
-        'phpVersion' => PHP_VERSION,
-    ]);
+    // ログインしている場合はレシピ画面へリダイレクト
+    if (auth()->check()) {
+        return redirect()->route('recipes.index');
+    }
+    // ログインしていない場合はログイン画面へリダイレクト
+    return redirect()->route('login');
 });
 Route::get('/dashboard', function () {
     // return Inertia::render('Dashboard');

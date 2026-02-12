@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Head, router, usePage } from '@inertiajs/react';
-import { Camera, Lock, X, Trash2 } from 'lucide-react';
+import { Camera, Lock, X, Trash2, LogOut } from 'lucide-react';
 import Footer from '@/Components/Mobile/Footer';
 
 // 型定義
@@ -183,6 +183,13 @@ export default function ProfilePage({ user, recipeCategories }: Props) {
         });
     };
 
+    /**
+     * ログアウト処理
+     */
+    const handleLogout = () => {
+        router.post(route('logout'));
+    };
+
     return (
         <>
             <Head title="プロフィール" />
@@ -329,6 +336,13 @@ export default function ProfilePage({ user, recipeCategories }: Props) {
                                                 className="w-full bg-[var(--main-color)] text-white py-2 rounded-lg hover:bg-[var(--sub-color)] transition"
                                             >
                                                 プロフィールを編集
+                                            </button>
+                                            <button
+                                                onClick={handleLogout}
+                                                className="w-full bg-gray-100 text-[var(--black)] py-2 rounded-lg hover:bg-gray-200 transition flex items-center justify-center gap-2"
+                                            >
+                                                <LogOut size={18} />
+                                                ログアウト
                                             </button>
                                         </div>
                                     )}
