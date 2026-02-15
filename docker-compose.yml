@@ -9,11 +9,13 @@ services:
       - ./docker/.bash_history:/root/.bash_history
     ports:
       - "5173:5173"
+    # npm run devをバックグラウンドで起動し、PHP-FPMをフォアグラウンドで起動
+    command: bash -c "npm install && npm run dev & php-fpm"
     depends_on:
       - db
     networks:
       - app-network
-  
+
   webserver:
     image: nginx:alpine
     ports:
