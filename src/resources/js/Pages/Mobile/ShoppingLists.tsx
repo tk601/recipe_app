@@ -314,10 +314,7 @@ const ShoppingLists = ({ shoppingLists, ingredients, ingredientCategories }: Sho
                             <label className="flex items-center gap-2 cursor-pointer">
                                 <input
                                     type="checkbox"
-                                    className="w-5 h-5 rounded"
-                                    style={{
-                                        accentColor: 'var(--main-color)', // チェックマークは自動的に白色になります
-                                    }}
+                                    className="custom-checkbox w-5 h-5 rounded"
                                     checked={selectedItems.length === shoppingLists.length && shoppingLists.length > 0}
                                     onChange={handleToggleAll}
                                 />
@@ -348,10 +345,7 @@ const ShoppingLists = ({ shoppingLists, ingredients, ingredientCategories }: Sho
                                     <label className="flex items-center p-4 cursor-pointer">
                                         <input
                                             type="checkbox"
-                                            className="w-5 h-5 rounded flex-shrink-0"
-                                            style={{
-                                                accentColor: 'var(--main-color)', // チェックマークは自動的に白色になります
-                                            }}
+                                            className="custom-checkbox w-5 h-5 rounded flex-shrink-0"
                                             checked={selectedItems.includes(item.id)}
                                             onChange={() => handleToggleItem(item.id)}
                                         />
