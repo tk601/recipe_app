@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { Head, router } from '@inertiajs/react';
 import { PageProps, ShoppingList } from '@/types';
 import { ShoppingCart, Trash2, Plus, X, Search } from 'lucide-react';
+import Header from '@/Components/Mobile/Header';
 import Footer from '@/Components/Mobile/Footer';
 
 // 食材の型定義
@@ -274,37 +275,7 @@ const ShoppingLists = ({ shoppingLists, ingredients, ingredientCategories }: Sho
             <Head title="買い物リスト - ごはんどき" />
 
             {/* ヘッダー */}
-            <header
-                className="bg-white shadow-sm border-b sticky top-0 z-10"
-                style={{ borderColor: 'var(--gray)' }}
-            >
-                <div className="max-w-7xl mx-auto px-4 sm:px-6">
-                    <div className="py-4">
-                        <div className="flex items-center justify-between">
-                            {/* タイトル */}
-                            <h1
-                                className="text-xl font-bold"
-                                style={{ color: 'var(--main-color)' }}
-                            >
-                                買い物リスト
-                            </h1>
-
-                            {/* 材料追加ボタン */}
-                            <button
-                                onClick={openIngredientModal}
-                                className="flex items-center gap-1 px-3 py-2 rounded-lg text-sm font-medium transition-all"
-                                style={{
-                                    backgroundColor: 'var(--main-color)',
-                                    color: 'white'
-                                }}
-                            >
-                                <Plus className="w-4 h-4" />
-                                追加
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </header>
+            <Header currentPage="shoppingLists" />
 
             {/* 買い物リストの内容 */}
             <main className="max-w-7xl mx-auto px-4 py-4">
@@ -433,7 +404,22 @@ const ShoppingLists = ({ shoppingLists, ingredients, ingredientCategories }: Sho
                 )}
             </main>
 
-            {/* フローティングアクションボタン */}
+            {/* 材料追加フローティングボタン */}
+            {selectedItems.length === 0 && (
+                <button
+                    onClick={openIngredientModal}
+                    className="fixed right-4 shadow-lg rounded-full w-14 h-14 flex items-center justify-center transition-all active:scale-95"
+                    style={{
+                        bottom: '88px',
+                        backgroundColor: 'var(--main-color)',
+                        color: 'white',
+                    }}
+                >
+                    <Plus className="w-6 h-6" />
+                </button>
+            )}
+
+            {/* 選択時のアクションボタン */}
             {selectedItems.length > 0 && (
                 <div
                     className="fixed left-0 right-0 p-4 shadow-lg"

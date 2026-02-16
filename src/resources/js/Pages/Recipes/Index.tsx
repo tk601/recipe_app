@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Head, router, usePage } from '@inertiajs/react';
 import { Heart, Plus, X } from 'lucide-react';
+import Header from '@/Components/Mobile/Header';
 import Footer from '@/Components/Mobile/Footer';
 
 interface RecipeCategory {
@@ -151,21 +152,7 @@ export default function RecipesIndex({ categories, favoriteRecipes }: Props) {
             )}
 
             {/* ヘッダー */}
-            <header
-                className="bg-white shadow-sm border-b sticky top-0 z-10"
-                style={{ borderColor: 'var(--gray)' }}
-            >
-                <div className="max-w-7xl mx-auto px-4 sm:px-6">
-                    <div className="py-4">
-                        <h1
-                            className="text-xl font-bold"
-                            style={{ color: 'var(--main-color)' }}
-                        >
-                            レシピ
-                        </h1>
-                    </div>
-                </div>
-            </header>
+            <Header currentPage="recipe" />
 
             {/* カテゴリ選択画面 */}
             <main className="max-w-7xl mx-auto px-4 py-4">

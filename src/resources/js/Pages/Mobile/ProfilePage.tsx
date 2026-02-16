@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Head, router, usePage } from '@inertiajs/react';
 import { Camera, Lock, X, Trash2, LogOut } from 'lucide-react';
+import Header from '@/Components/Mobile/Header';
 import Footer from '@/Components/Mobile/Footer';
 
 // 型定義
@@ -214,22 +215,8 @@ export default function ProfilePage({ user, recipeCategories }: Props) {
             )}
 
             <div className="min-h-screen bg-[var(--base-color)] pb-20 md:pb-8">
-                {/* PC画面用のヘッダー */}
-                <header
-                    className="hidden md:block bg-white shadow-sm border-b sticky top-0 z-10"
-                    style={{ borderColor: 'var(--gray)' }}
-                >
-                    <div className="max-w-6xl mx-auto px-6">
-                        <div className="py-4">
-                            <h1
-                                className="text-xl font-bold"
-                                style={{ color: 'var(--main-color)' }}
-                            >
-                                プロフィール設定
-                            </h1>
-                        </div>
-                    </div>
-                </header>
+                {/* ヘッダー */}
+                <Header currentPage="profile" />
 
                 {/* PC画面用のコンテナ */}
                 <div className="max-w-6xl mx-auto md:p-8">

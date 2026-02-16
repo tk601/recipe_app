@@ -2,6 +2,7 @@ import React, { useState, useRef, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { Head, router } from '@inertiajs/react';
 import { Check, X } from 'lucide-react';
+import Header from '@/Components/Mobile/Header';
 import Footer from '@/Components/Mobile/Footer';
 
 interface Ingredient {
@@ -204,36 +205,28 @@ export default function IngredientsIndex({ categories, ingredients, allIngredien
             <Head title="食材管理 - ごはんどき" />
 
             {/* ヘッダー */}
-            <header
-                className="bg-white shadow-sm border-b sticky top-0 z-10"
+            <Header currentPage="refrigerators" />
+
+            {/* 検索ボックス */}
+            <div
+                className="bg-white border-b sticky top-[49px] z-10 px-4 py-3"
                 style={{ borderColor: 'var(--gray)' }}
             >
-                <div className="max-w-7xl mx-auto px-4 sm:px-6">
-                    <div className="py-4">
-                        {/* タイトル */}
-                        <h1
-                            className="text-xl font-bold mb-3"
-                            style={{ color: 'var(--main-color)' }}
-                        >
-                            食材管理
-                        </h1>
-
-                        {/* 検索ボックス */}
-                        <div className="relative" ref={searchContainerRef}>
-                            <input
-                                type="text"
-                                placeholder="食材を探す"
-                                value={search}
-                                onChange={handleSearch}
-                                className="w-full px-4 py-2 rounded-lg border input-focus"
-                                style={{
-                                    borderColor: 'var(--gray)',
-                                }}
-                            />
-                        </div>
+                <div className="max-w-7xl mx-auto">
+                    <div className="relative" ref={searchContainerRef}>
+                        <input
+                            type="text"
+                            placeholder="食材を探す"
+                            value={search}
+                            onChange={handleSearch}
+                            className="w-full px-4 py-2 rounded-lg border input-focus"
+                            style={{
+                                borderColor: 'var(--gray)',
+                            }}
+                        />
                     </div>
                 </div>
-            </header>
+            </div>
 
             {/* 検索候補のドロップダウン（Portalで描画） */}
             {showSuggestions && searchSuggestions.length > 0 && searchContainerRef.current && createPortal(
@@ -288,7 +281,7 @@ export default function IngredientsIndex({ categories, ingredients, allIngredien
 
             {/* カテゴリ一覧（横スクロール） */}
             <div
-                className="bg-white border-b sticky top-[88px] z-10"
+                className="bg-white border-b sticky top-[97px] z-10"
                 style={{ borderColor: 'var(--gray)' }}
             >
                 <div className="max-w-7xl mx-auto px-4">
@@ -319,7 +312,7 @@ export default function IngredientsIndex({ categories, ingredients, allIngredien
 
             {/* 在庫フィルター */}
             <div
-                className="bg-white border-b sticky top-[144px] z-10"
+                className="bg-white border-b sticky top-[153px] z-10"
                 style={{ borderColor: 'var(--gray)' }}
             >
                 <div className="max-w-7xl mx-auto px-4">
