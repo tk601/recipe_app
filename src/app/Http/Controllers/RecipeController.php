@@ -205,7 +205,7 @@ class RecipeController extends Controller
     {
         $userId = Auth::id();
 
-        // レシピの基本情報を取得
+        // レシピの基本情報を取得（公開レシピ、または自分のレシピのみ）
         $recipe = Recipe::select(
                 'recipes.id',
                 'recipes.recipe_name',
@@ -218,8 +218,21 @@ class RecipeController extends Controller
             )
             ->join('recipe_categories', 'recipes.recipe_category_id', '=', 'recipe_categories.id')
             ->where('recipes.id', $id)
-            ->where('recipes.publish_flg', 1)
-            ->firstOrFail();
+            ->where(function ($query) use ($userId) {
+                // 公開レシピ、またはログインユーザーが作成者の場合は表示
+                $query->where('recipes.publish_flg', 1)
+                    ->orWhere('recipes.user_id', $userId);
+            })
+            ->first();
+
+        // レシピが見つからない場合はメッセージを表示
+        if (!$recipe) {
+            return Inertia::render('Recipes/Show', [
+                'recipe' => null,
+                'ingredients' => [],
+                'instructions' => [],
+            ]);
+        }
 
         // レシピの材料一覧を取得
         $ingredients = RecipeIngredient::where('recipe_ingredients.recipe_id', $id)

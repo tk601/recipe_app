@@ -36,7 +36,7 @@ interface FlashMessages {
 }
 
 interface Props {
-    recipe: Recipe;
+    recipe: Recipe | null;
     ingredients: Ingredient[];
     instructions: Instruction[];
 }
@@ -65,7 +65,7 @@ export default function RecipeShow({ recipe, ingredients, instructions }: Props)
     const [showFlash, setShowFlash] = useState(false);
 
     // 自分のレシピかどうかを判定
-    const isOwner = currentUser && recipe.user_id === currentUser.id;
+    const isOwner = recipe && currentUser && recipe.user_id === currentUser.id;
 
     // フラッシュメッセージが存在する場合に表示
     useEffect(() => {
@@ -196,6 +196,47 @@ export default function RecipeShow({ recipe, ingredients, instructions }: Props)
             }
         });
     };
+
+    // レシピが見つからない場合のメッセージ表示
+    if (!recipe) {
+        return (
+            <div
+                className="min-h-screen pb-20 md:pb-8"
+                style={{ backgroundColor: 'var(--base-color)' }}
+            >
+                <Head title="レシピが見つかりません - ごはんどき" />
+                <div className="flex flex-col items-center justify-center min-h-[60vh] px-4">
+                    <div className="bg-white rounded-2xl shadow-sm p-8 text-center max-w-md w-full">
+                        <div
+                            className="text-5xl mb-4"
+                        >
+                            🍳
+                        </div>
+                        <h1
+                            className="text-xl font-bold mb-2"
+                            style={{ color: 'var(--black)' }}
+                        >
+                            お探しのレシピはありませんでした
+                        </h1>
+                        <p
+                            className="text-sm mb-6"
+                            style={{ color: 'var(--dark-gray)' }}
+                        >
+                            レシピが削除されたか、非公開に設定されている可能性があります。
+                        </p>
+                        <button
+                            onClick={() => router.visit(route('recipes.index'))}
+                            className="px-6 py-3 rounded-lg font-bold text-white transition-opacity hover:opacity-90"
+                            style={{ backgroundColor: 'var(--main-color)' }}
+                        >
+                            レシピ一覧に戻る
+                        </button>
+                    </div>
+                </div>
+                <Footer currentPage="recipe" />
+            </div>
+        );
+    }
 
     return (
         <div
