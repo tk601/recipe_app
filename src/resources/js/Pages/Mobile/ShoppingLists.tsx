@@ -44,6 +44,12 @@ const ShoppingLists = ({ shoppingLists, ingredients, ingredientCategories }: Sho
     // 自由入力項目
     const [customItem, setCustomItem] = useState('');
 
+    // 自由入力ポップアップの表示状態
+    const [showCustomItemModal, setShowCustomItemModal] = useState(false);
+
+    // 自由入力バリデーションエラー
+    const [customItemError, setCustomItemError] = useState('');
+
     // 検索候補の表示状態
     const [showSearchSuggestions, setShowSearchSuggestions] = useState(false);
     const searchInputRef = useRef<HTMLDivElement>(null);
@@ -173,17 +179,61 @@ const ShoppingLists = ({ shoppingLists, ingredients, ingredientCategories }: Sho
      * 選択した食材を確定して買い物リストに追加
      */
     const confirmIngredientSelection = () => {
-        // 食材も自由入力も何も選択されていない場合は何もしない
-        if (tempSelectedIngredients.size === 0 && !customItem.trim()) {
+        // 食材が何も選択されていない場合は何もしない
+        if (tempSelectedIngredients.size === 0) {
             return;
         }
 
         router.post(route('shopping-lists.store'), {
-            ingredient_ids: tempSelectedIngredients.size > 0 ? Array.from(tempSelectedIngredients) : undefined,
-            custom_item: customItem.trim() || undefined,
+            ingredient_ids: Array.from(tempSelectedIngredients),
         }, {
             onSuccess: () => {
                 closeIngredientModal();
+            },
+        });
+    };
+
+    /**
+     * 自由入力ポップアップを開く
+     */
+    const openCustomItemModal = () => {
+        setCustomItem('');
+        setCustomItemError('');
+        setShowCustomItemModal(true);
+    };
+
+    /**
+     * 自由入力ポップアップを閉じる
+     */
+    const closeCustomItemModal = () => {
+        setShowCustomItemModal(false);
+        setCustomItem('');
+        setCustomItemError('');
+    };
+
+    /**
+     * 自由入力を保存する（バリデーション付き）
+     */
+    const confirmCustomItem = () => {
+        const trimmed = customItem.trim();
+
+        // 空チェック
+        if (!trimmed) {
+            setCustomItemError('入力してください');
+            return;
+        }
+
+        // 50文字以内チェック
+        if (trimmed.length > 50) {
+            setCustomItemError('50文字以内で入力してください');
+            return;
+        }
+
+        router.post(route('shopping-lists.store'), {
+            custom_item: trimmed,
+        }, {
+            onSuccess: () => {
+                closeCustomItemModal();
             },
         });
     };
@@ -485,20 +535,6 @@ const ShoppingLists = ({ shoppingLists, ingredients, ingredientCategories }: Sho
                                 />
                             </div>
 
-                            {/* 自由入力欄 */}
-                            <div className="relative">
-                                <input
-                                    type="text"
-                                    value={customItem}
-                                    onChange={(e) => setCustomItem(e.target.value)}
-                                    placeholder="または自由に入力（例: チョコレート、お菓子など）"
-                                    className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2"
-                                    style={{
-                                        borderColor: 'var(--gray)',
-                                        '--tw-ring-color': 'var(--sub-color)'
-                                    } as React.CSSProperties}
-                                />
-                            </div>
                         </div>
 
                             {/* 検索候補のドロップダウン */}
@@ -604,16 +640,79 @@ const ShoppingLists = ({ shoppingLists, ingredients, ingredientCategories }: Sho
                             )}
                         </div>
 
-                        {/* 確定ボタン */}
-                        <div className="p-4 border-t" style={{ borderColor: 'var(--gray)' }}>
+                        {/* 確定ボタン・自由入力ボタン */}
+                        <div className="p-4 border-t space-y-2" style={{ borderColor: 'var(--gray)' }}>
                             <button
                                 onClick={confirmIngredientSelection}
-                                disabled={tempSelectedIngredients.size === 0 && !customItem.trim()}
+                                disabled={tempSelectedIngredients.size === 0}
                                 className="w-full py-3 rounded-lg font-bold text-white"
-                                style={{ backgroundColor: (tempSelectedIngredients.size === 0 && !customItem.trim()) ? 'var(--gray)' : 'var(--main-color)' }}
+                                style={{ backgroundColor: tempSelectedIngredients.size === 0 ? 'var(--gray)' : 'var(--main-color)' }}
                             >
                                 買い物リストに追加
                                 {tempSelectedIngredients.size > 0 && ` (${tempSelectedIngredients.size}個)`}
+                            </button>
+                            <button
+                                onClick={openCustomItemModal}
+                                className="w-full py-3 rounded-lg font-bold border"
+                                style={{ borderColor: 'var(--sub-color)', color: 'var(--sub-color)', backgroundColor: 'white' }}
+                            >
+                                自由入力
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* 自由入力ポップアップ */}
+            {showCustomItemModal && (
+                <div className="fixed inset-0 bg-black/50 z-[10002] flex items-center justify-center p-4">
+                    <div className="bg-white rounded-2xl p-6 max-w-sm w-full">
+                        <h3 className="font-bold text-lg mb-4" style={{ color: 'var(--black)' }}>
+                            自由入力
+                        </h3>
+                        <div className="mb-4">
+                            <input
+                                type="text"
+                                value={customItem}
+                                onChange={(e) => {
+                                    setCustomItem(e.target.value);
+                                    setCustomItemError('');
+                                }}
+                                placeholder="例: チョコレート、お菓子など"
+                                maxLength={50}
+                                className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2"
+                                style={{
+                                    borderColor: customItemError ? '#EF4444' : 'var(--gray)',
+                                    '--tw-ring-color': 'var(--sub-color)'
+                                } as React.CSSProperties}
+                                autoFocus
+                            />
+                            {/* 文字数カウントとエラーメッセージ */}
+                            <div className="flex justify-between items-center mt-1">
+                                {customItemError ? (
+                                    <p className="text-xs" style={{ color: '#EF4444' }}>{customItemError}</p>
+                                ) : (
+                                    <span />
+                                )}
+                                <p className="text-xs ml-auto" style={{ color: customItem.length > 50 ? '#EF4444' : 'var(--dark-gray)' }}>
+                                    {customItem.length} / 50
+                                </p>
+                            </div>
+                        </div>
+                        <div className="space-y-2">
+                            <button
+                                onClick={confirmCustomItem}
+                                className="w-full py-3 rounded-lg font-bold text-white"
+                                style={{ backgroundColor: 'var(--main-color)' }}
+                            >
+                                買い物リストに追加
+                            </button>
+                            <button
+                                onClick={closeCustomItemModal}
+                                className="w-full py-3 rounded-lg font-bold"
+                                style={{ backgroundColor: 'var(--light-gray)', color: 'var(--dark-gray)' }}
+                            >
+                                キャンセル
                             </button>
                         </div>
                     </div>
