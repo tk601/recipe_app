@@ -124,21 +124,32 @@ class RecipeController extends Controller
             ]);
         }
 
-        // お気に入りレシピを取得
-        $favoriteRecipes = $this->getFavoriteRecipes($userId, $userIngredientIds);
+        // お気に入りレシピを最初のページ分だけ取得（残りは無限スクロールで追加読み込み）
+        $favoritesData = $this->getFavoriteRecipes($userId, $userIngredientIds, 1, 20);
 
         return Inertia::render('Recipes/Index', [
-            'categories' => $categories,
-            'recipes' => [],
+            'categories'         => $categories,
+            'recipes'            => [],
             'selectedCategoryId' => null,
-            'favoriteRecipes' => $favoriteRecipes,
+            'favoriteRecipes'    => $favoritesData['items'],
+            'favoritesPagination' => [
+                'currentPage' => $favoritesData['currentPage'],
+                'hasMore'     => $favoritesData['hasMore'],
+                'total'       => $favoritesData['total'],
+            ],
         ]);
     }
 
     /**
-     * お気に入りレシピを取得
+     * お気に入りレシピを取得（ページネーション対応）
+     *
+     * @param int $userId       ユーザーID
+     * @param array $userIngredientIds  冷蔵庫の食材ID一覧
+     * @param int $page         取得するページ番号（1始まり）
+     * @param int $perPage      1ページあたりの件数
+     * @return array{ items: Collection, hasMore: bool, total: int, currentPage: int }
      */
-    private function getFavoriteRecipes($userId, $userIngredientIds)
+    private function getFavoriteRecipes($userId, $userIngredientIds, $page = 1, $perPage = 20)
     {
         // ユーザーがいいねしたレシピIDを取得
         $favoriteRecipeIds = DB::table('goods')
@@ -147,11 +158,16 @@ class RecipeController extends Controller
             ->toArray();
 
         if (empty($favoriteRecipeIds)) {
-            return [];
+            return ['items' => [], 'hasMore' => false, 'total' => 0, 'currentPage' => 1];
         }
 
-        // お気に入りレシピの詳細を取得
-        return Recipe::select(
+        // 公開済みお気に入りレシピの総件数を取得
+        $total = Recipe::whereIn('recipes.id', $favoriteRecipeIds)
+            ->where('publish_flg', 1)
+            ->count();
+
+        // お気に入りレシピの詳細をページネーションで取得
+        $recipes = Recipe::select(
                 'recipes.id as recipe_id',
                 'recipes.recipe_name',
                 'recipes.recipe_image_url',
@@ -159,15 +175,17 @@ class RecipeController extends Controller
                 'recipe_categories.recipe_category_name'
             )
             ->join('recipe_categories', 'recipes.recipe_category_id', '=', 'recipe_categories.id')
-            ->whereIn('recipes.id', $favoriteRecipeIds)
-            ->where('publish_flg', 1)
-            ->orderBy('goods.created_at', 'desc')
             ->leftJoin('goods', function($join) use ($userId) {
                 $join->on('recipes.id', '=', 'goods.recipe_id')
                     ->where('goods.user_id', '=', $userId);
             })
+            ->whereIn('recipes.id', $favoriteRecipeIds)
+            ->where('publish_flg', 1)
+            ->orderBy('goods.created_at', 'desc')
+            ->offset(($page - 1) * $perPage)
+            ->limit($perPage)
             ->get()
-            ->map(function ($recipe) use ($userId, $userIngredientIds) {
+            ->map(function ($recipe) use ($userIngredientIds) {
                 // レシピに必要な食材を取得
                 $recipeIngredients = RecipeIngredient::where('recipe_id', $recipe->recipe_id)
                     ->join('ingredients', 'recipe_ingredients.ingredients_id', '=', 'ingredients.id')
@@ -191,11 +209,37 @@ class RecipeController extends Controller
                     ->where('recipe_id', $recipe->recipe_id)
                     ->count();
 
-                // このユーザーがいいねしているかチェック（お気に入りなので常にtrue）
+                // お気に入り一覧なので常にいいね済み
                 $recipe->is_liked = true;
 
                 return $recipe;
             });
+
+        return [
+            'items'       => $recipes,
+            'hasMore'     => ($page * $perPage) < $total,
+            'total'       => $total,
+            'currentPage' => $page,
+        ];
+    }
+
+    /**
+     * お気に入りレシピをJSON形式で返す（無限スクロール用APIエンドポイント）
+     */
+    public function favoriteList(Request $request)
+    {
+        $userId = Auth::id();
+        $page   = max(1, (int) $request->get('page', 1));
+        $perPage = 20;
+
+        // ユーザーの冷蔵庫にある食材IDを取得
+        $userIngredientIds = Refrigerator::where('user_id', $userId)
+            ->pluck('ingredients_id')
+            ->toArray();
+
+        $data = $this->getFavoriteRecipes($userId, $userIngredientIds, $page, $perPage);
+
+        return response()->json($data);
     }
 
     /**

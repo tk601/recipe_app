@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { Head, router, usePage } from '@inertiajs/react';
 import { Heart, Plus, X } from 'lucide-react';
 import Header from '@/Components/Mobile/Header';
@@ -23,9 +23,17 @@ interface Recipe {
     is_my_recipe?: boolean;
 }
 
+// お気に入りのページネーション情報
+interface FavoritesPagination {
+    currentPage: number;
+    hasMore: boolean;
+    total: number;
+}
+
 interface Props {
     categories: RecipeCategory[];
     favoriteRecipes: Recipe[];
+    favoritesPagination: FavoritesPagination;
 }
 
 interface FlashMessages {
@@ -41,7 +49,70 @@ interface PageProps extends Props {
     [key: string]: any;
 }
 
-export default function RecipesIndex({ categories, favoriteRecipes }: Props) {
+/**
+ * 遅延読み込み画像コンポーネント
+ * Intersection Observer で表示領域に入ったタイミングで画像を読み込み、
+ * 読み込み中は DaisyUI のスケルトンを表示する
+ */
+const LazyImage: React.FC<{ src: string; alt: string }> = ({ src, alt }) => {
+    // idle: 未読み込み / loading: 読み込み中 / loaded: 完了 / error: エラー
+    const [status, setStatus] = useState<'idle' | 'loading' | 'loaded' | 'error'>('idle');
+    const containerRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        // 表示領域の 200px 手前から先読みを開始する
+        const observer = new IntersectionObserver(
+            ([entry]) => {
+                if (entry.isIntersecting) {
+                    setStatus('loading');
+                    observer.disconnect();
+                }
+            },
+            { rootMargin: '200px' }
+        );
+
+        if (containerRef.current) {
+            observer.observe(containerRef.current);
+        }
+
+        return () => observer.disconnect();
+    }, []);
+
+    return (
+        <div ref={containerRef} className="w-full h-full">
+            {/* 読み込み前・読み込み中はスケルトン表示 */}
+            {(status === 'idle' || status === 'loading') && (
+                <div className="skeleton w-full h-full rounded-none" />
+            )}
+
+            {/* 画像を不透明度 0 で読み込んでおき、完了後にフェードイン */}
+            {(status === 'loading' || status === 'loaded') && (
+                <img
+                    src={src || '/images/no-image.png'}
+                    alt={alt}
+                    className={`w-full h-full object-cover transition-opacity duration-300 ${
+                        status === 'loaded' ? 'opacity-100' : 'opacity-0'
+                    }`}
+                    loading="lazy"
+                    decoding="async"
+                    onLoad={() => setStatus('loaded')}
+                    onError={() => setStatus('error')}
+                />
+            )}
+
+            {/* エラー時は no-image にフォールバック */}
+            {status === 'error' && (
+                <img
+                    src="/images/no-image.png"
+                    alt={alt}
+                    className="w-full h-full object-cover"
+                />
+            )}
+        </div>
+    );
+};
+
+export default function RecipesIndex({ categories, favoriteRecipes, favoritesPagination }: Props) {
     // フラッシュメッセージを取得
     const page = usePage<PageProps>();
     const flash = page.props.flash;
@@ -50,6 +121,15 @@ export default function RecipesIndex({ categories, favoriteRecipes }: Props) {
     const [showAllCategories, setShowAllCategories] = useState(false);
     // フラッシュメッセージの表示状態
     const [showFlash, setShowFlash] = useState(false);
+
+    // 蓄積したお気に入りレシピ（無限スクロールで追加していく）
+    const [allFavoriteRecipes, setAllFavoriteRecipes] = useState<Recipe[]>(favoriteRecipes);
+    // 現在のページネーション状態
+    const [pagination, setPagination] = useState<FavoritesPagination>(favoritesPagination);
+    // 追加読み込み中フラグ
+    const [isLoadingMore, setIsLoadingMore] = useState(false);
+    // 無限スクロールの監視対象要素（リスト末尾）
+    const loadMoreRef = useRef<HTMLDivElement>(null);
 
     // フラッシュメッセージが存在する場合に表示
     useEffect(() => {
@@ -124,6 +204,69 @@ export default function RecipesIndex({ categories, favoriteRecipes }: Props) {
      * もっと見るボタンの表示判定（スマホ: 6個以上、PC: 8個以上）
      */
     const hasMoreCategories = isDesktop ? categories.length > 8 : categories.length > 6;
+
+    /**
+     * お気に入りレシピを追加で読み込む（無限スクロール用）
+     * fetch で JSON エンドポイントを叩き、取得結果を既存リストに追記する
+     */
+    const loadMoreFavorites = useCallback(async () => {
+        // 読み込み中 or 次ページなし の場合は何もしない
+        if (isLoadingMore || !pagination.hasMore) return;
+
+        setIsLoadingMore(true);
+
+        try {
+            const nextPage = pagination.currentPage + 1;
+            const response = await fetch(
+                route('recipes.favorite-list') + `?page=${nextPage}`,
+                {
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest',
+                    },
+                }
+            );
+
+            if (!response.ok) {
+                throw new Error('レスポンスエラー');
+            }
+
+            const data = await response.json();
+
+            // 取得したレシピを既存リストに追記
+            setAllFavoriteRecipes(prev => [...prev, ...data.items]);
+            setPagination({
+                currentPage: data.currentPage,
+                hasMore:     data.hasMore,
+                total:       data.total,
+            });
+        } catch (error) {
+            console.error('お気に入りの追加読み込みに失敗しました:', error);
+        } finally {
+            setIsLoadingMore(false);
+        }
+    }, [isLoadingMore, pagination]);
+
+    /**
+     * リスト末尾の要素を Intersection Observer で監視し、
+     * 表示領域に入ったら次ページを読み込む
+     */
+    useEffect(() => {
+        const observer = new IntersectionObserver(
+            ([entry]) => {
+                if (entry.isIntersecting) {
+                    loadMoreFavorites();
+                }
+            },
+            { threshold: 0.1 }
+        );
+
+        if (loadMoreRef.current) {
+            observer.observe(loadMoreRef.current);
+        }
+
+        return () => observer.disconnect();
+    }, [loadMoreFavorites]);
 
     return (
         <div
@@ -212,81 +355,106 @@ export default function RecipesIndex({ categories, favoriteRecipes }: Props) {
                             className="text-lg font-bold mb-4"
                             style={{ color: 'var(--black)' }}
                         >
+                            {/* 総件数も表示 */}
                             お気に入り
+                            {pagination.total > 0 && (
+                                <span
+                                    className="ml-2 text-sm font-normal"
+                                    style={{ color: 'var(--dark-gray)' }}
+                                >
+                                    {allFavoriteRecipes.length} / {pagination.total}件
+                                </span>
+                            )}
                         </h2>
-                        {favoriteRecipes.length > 0 ? (
-                            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                                {favoriteRecipes.map((recipe) => (
-                                    <div
-                                        key={recipe.recipe_id}
-                                        onClick={() => handleRecipeClick(recipe.recipe_id)}
-                                        className="bg-white rounded-lg shadow-sm border overflow-hidden transition-all duration-200 active:scale-95 cursor-pointer"
-                                        style={{ borderColor: 'var(--gray)' }}
-                                    >
-                                        {/* 料理画像 */}
-                                        <div className="relative aspect-square">
-                                            <img
-                                                src={recipe.recipe_image_url || '/images/no-image.png'}
-                                                alt={recipe.recipe_name}
-                                                className="w-full h-full object-cover"
-                                            />
 
-                                            {/* いいねボタン */}
-                                            <button
-                                                onClick={(e) => handleLike(e, recipe.recipe_id)}
-                                                className="absolute top-2 right-2 w-8 h-8 rounded-full bg-white/80 flex items-center justify-center transition-all duration-200 hover:bg-white"
-                                            >
-                                                <Heart
-                                                    className="w-5 h-5"
-                                                    style={{
-                                                        color: recipe.is_liked ? 'var(--main-color)' : 'var(--dark-gray)',
-                                                        fill: recipe.is_liked ? 'var(--main-color)' : 'none'
-                                                    }}
+                        {allFavoriteRecipes.length > 0 ? (
+                            <>
+                                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                                    {allFavoriteRecipes.map((recipe) => (
+                                        <div
+                                            key={recipe.recipe_id}
+                                            onClick={() => handleRecipeClick(recipe.recipe_id)}
+                                            className="bg-white rounded-lg shadow-sm border overflow-hidden transition-all duration-200 active:scale-95 cursor-pointer"
+                                            style={{ borderColor: 'var(--gray)' }}
+                                        >
+                                            {/* 料理画像（遅延読み込み） */}
+                                            <div className="relative aspect-square">
+                                                <LazyImage
+                                                    src={recipe.recipe_image_url || '/images/no-image.png'}
+                                                    alt={recipe.recipe_name}
                                                 />
-                                            </button>
 
-                                            {/* 作れるバッジ */}
-                                            {recipe.can_cook && (
-                                                <div
-                                                    className="absolute top-2 left-2 px-2 py-1 rounded text-xs font-bold text-white"
-                                                    style={{ backgroundColor: 'var(--main-color)' }}
+                                                {/* いいねボタン */}
+                                                <button
+                                                    onClick={(e) => handleLike(e, recipe.recipe_id)}
+                                                    className="absolute top-2 right-2 w-8 h-8 rounded-full bg-white/80 flex items-center justify-center transition-all duration-200 hover:bg-white"
                                                 >
-                                                    作れる!
-                                                </div>
-                                            )}
-                                        </div>
+                                                    <Heart
+                                                        className="w-5 h-5"
+                                                        style={{
+                                                            color: recipe.is_liked ? 'var(--main-color)' : 'var(--dark-gray)',
+                                                            fill: recipe.is_liked ? 'var(--main-color)' : 'none'
+                                                        }}
+                                                    />
+                                                </button>
 
-                                        {/* 料理情報 */}
-                                        <div className="p-3">
-                                            <h3
-                                                className="font-bold text-sm mb-1"
-                                                style={{ color: 'var(--black)' }}
-                                            >
-                                                {recipe.recipe_name}
-                                            </h3>
-
-                                            {/* 食材リスト */}
-                                            <div
-                                                className="text-xs line-clamp-2"
-                                                style={{ color: 'var(--dark-gray)' }}
-                                            >
-                                                {recipe.ingredients.join('、')}
+                                                {/* 作れるバッジ */}
+                                                {recipe.can_cook && (
+                                                    <div
+                                                        className="absolute top-2 left-2 px-2 py-1 rounded text-xs font-bold text-white"
+                                                        style={{ backgroundColor: 'var(--main-color)' }}
+                                                    >
+                                                        作れる!
+                                                    </div>
+                                                )}
                                             </div>
 
-                                            {/* いいね数 */}
-                                            {recipe.likes_count > 0 && (
+                                            {/* 料理情報 */}
+                                            <div className="p-3">
+                                                <h3
+                                                    className="font-bold text-sm mb-1"
+                                                    style={{ color: 'var(--black)' }}
+                                                >
+                                                    {recipe.recipe_name}
+                                                </h3>
+
+                                                {/* 食材リスト */}
                                                 <div
-                                                    className="text-xs mt-2 flex items-center"
+                                                    className="text-xs line-clamp-2"
                                                     style={{ color: 'var(--dark-gray)' }}
                                                 >
-                                                    <Heart className="w-3 h-3 mr-1" />
-                                                    {recipe.likes_count}
+                                                    {recipe.ingredients.join('、')}
                                                 </div>
-                                            )}
+
+                                                {/* いいね数 */}
+                                                {recipe.likes_count > 0 && (
+                                                    <div
+                                                        className="text-xs mt-2 flex items-center"
+                                                        style={{ color: 'var(--dark-gray)' }}
+                                                    >
+                                                        <Heart className="w-3 h-3 mr-1" />
+                                                        {recipe.likes_count}
+                                                    </div>
+                                                )}
+                                            </div>
                                         </div>
-                                    </div>
-                                ))}
-                            </div>
+                                    ))}
+                                </div>
+
+                                {/* 無限スクロールの監視対象（リスト末尾に配置） */}
+                                <div ref={loadMoreRef} className="mt-4 flex justify-center py-4">
+                                    {isLoadingMore && (
+                                        // 読み込み中スピナー
+                                        <span className="loading loading-spinner loading-md" style={{ color: 'var(--main-color)' }} />
+                                    )}
+                                    {!pagination.hasMore && allFavoriteRecipes.length > 0 && (
+                                        // 全件読み込み完了メッセージ
+                                        <p className="text-sm" style={{ color: 'var(--dark-gray)' }}>
+                                            全 {pagination.total} 件を表示しました
+                                        </p>
+                                    )}
+                                </div>
+                            </>
                         ) : (
                             <div className="text-center py-12">
                                 <p
@@ -298,6 +466,7 @@ export default function RecipesIndex({ categories, favoriteRecipes }: Props) {
                             </div>
                         )}
                     </div>
+
                     {/* レシピ作成ボタン（浮動） */}
                     <button
                         onClick={() => router.visit(route('recipes.create'))}

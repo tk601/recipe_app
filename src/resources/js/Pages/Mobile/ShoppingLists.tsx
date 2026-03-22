@@ -452,14 +452,13 @@ const ShoppingLists = ({ shoppingLists, ingredients, ingredientCategories }: Sho
             {selectedItems.length === 0 && (
                 <button
                     onClick={openIngredientModal}
-                    className="fixed right-4 shadow-lg rounded-full w-14 h-14 flex items-center justify-center transition-all active:scale-95"
+                    className="fixed bottom-24 md:bottom-20 right-4 md:right-16 px-4 py-3 rounded-full shadow-lg flex items-center gap-2 transition-all duration-200 hover:shadow-xl active:scale-95 z-20"
                     style={{
-                        bottom: '88px',
                         backgroundColor: 'var(--main-color)',
-                        color: 'white',
                     }}
                 >
-                    <Plus className="w-6 h-6" />
+                    <span className="text-white font-bold text-sm">買い物リスト作成</span>
+                    <Plus className="w-4 h-4 text-white" />
                 </button>
             )}
 
