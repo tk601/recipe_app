@@ -351,7 +351,7 @@ const ShoppingLists = ({ shoppingLists, ingredients, ingredientCategories }: Sho
                             className="text-sm"
                             style={{ color: 'var(--dark-gray)' }}
                         >
-                            レシピから食材を追加してみましょう
+                            リストを作成しましょう
                         </p>
                     </div>
                 ) : (
