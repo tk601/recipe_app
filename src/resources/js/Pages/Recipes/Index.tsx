@@ -1,8 +1,7 @@
 import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { Head, router, usePage } from '@inertiajs/react';
 import { Heart, Plus, X, Search } from 'lucide-react';
-import Header from '@/Components/Mobile/Header';
-import Footer from '@/Components/Mobile/Footer';
+import MobileLayout from '@/Layouts/MobileLayout';
 
 interface RecipeCategory {
     id: number;
@@ -337,6 +336,7 @@ export default function RecipesIndex({ categories, favoriteRecipes, favoritesPag
     }, [loadMoreFavorites]);
 
     return (
+        <MobileLayout currentPage="recipe">
         <div
             className="min-h-screen pb-20 md:pb-8"
             style={{ backgroundColor: 'var(--base-color)' }}
@@ -362,14 +362,11 @@ export default function RecipesIndex({ categories, favoriteRecipes, favoritesPag
                 </div>
             )}
 
-            <div className="sticky top-0 z-30">
-                <Header currentPage="recipe" />
-
-                {/* 検索ボックス */}
-                <div
-                    className="bg-white border-b px-4 py-3"
-                    style={{ borderColor: 'var(--gray)' }}
-                >
+            {/* 検索ボックス（ヘッダー直下に固定） */}
+            <div
+                className="sticky top-14 z-20 bg-white border-b px-4 py-3"
+                style={{ borderColor: 'var(--gray)' }}
+            >
                 <div className="max-w-7xl mx-auto">
                     <div className="relative">
                         {/* 検索アイコン */}
@@ -398,7 +395,6 @@ export default function RecipesIndex({ categories, favoriteRecipes, favoritesPag
                             </button>
                         )}
                     </div>
-                </div>
                 </div>
             </div>
 
@@ -699,8 +695,7 @@ export default function RecipesIndex({ categories, favoriteRecipes, favoritesPag
                 </button>
             </main>
 
-            {/* フッター */}
-            <Footer currentPage="recipe" />
         </div>
+        </MobileLayout>
     );
 }

@@ -2,8 +2,7 @@ import React, { useState, useRef, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { Head, router } from '@inertiajs/react';
 import { Check, X } from 'lucide-react';
-import Header from '@/Components/Mobile/Header';
-import Footer from '@/Components/Mobile/Footer';
+import MobileLayout from '@/Layouts/MobileLayout';
 
 interface Ingredient {
     ingredient_id: number;
@@ -198,14 +197,12 @@ export default function IngredientsIndex({ categories, ingredients, allIngredien
     }, [ingredients, stockFilter]);
 
     return (
+        <MobileLayout currentPage="refrigerators">
         <div
             className="min-h-screen pb-20"
             style={{ backgroundColor: 'var(--base-color)' }}
         >
             <Head title="食材管理 - ごはんどき" />
-
-            {/* ヘッダー */}
-            <Header currentPage="refrigerators" />
 
             {/* 検索ボックス */}
             <div
@@ -468,8 +465,7 @@ export default function IngredientsIndex({ categories, ingredients, allIngredien
                 )}
             </main>
 
-            {/* フッター */}
-            <Footer currentPage="refrigerators" />
         </div>
+        </MobileLayout>
     );
 }

@@ -3,8 +3,7 @@ import { createPortal } from 'react-dom';
 import { Head, router } from '@inertiajs/react';
 import { PageProps, ShoppingList } from '@/types';
 import { ShoppingCart, Trash2, Plus, X, Search } from 'lucide-react';
-import Header from '@/Components/Mobile/Header';
-import Footer from '@/Components/Mobile/Footer';
+import MobileLayout from '@/Layouts/MobileLayout';
 
 // 食材の型定義
 interface Ingredient {
@@ -318,14 +317,12 @@ const ShoppingLists = ({ shoppingLists, ingredients, ingredientCategories }: Sho
     }, [showIngredientModal]);
 
     return (
+        <MobileLayout currentPage="shoppingLists">
         <div
             className="min-h-screen pb-20"
             style={{ backgroundColor: 'var(--base-color)' }}
         >
             <Head title="買い物リスト - ごはんどき" />
-
-            {/* ヘッダー */}
-            <Header currentPage="shoppingLists" />
 
             {/* 買い物リストの内容 */}
             <main className="max-w-7xl mx-auto px-4 py-4">
@@ -795,9 +792,8 @@ const ShoppingLists = ({ shoppingLists, ingredients, ingredientCategories }: Sho
                 </div>
             )}
 
-            {/* フッター */}
-            <Footer currentPage="shoppingLists" />
         </div>
+        </MobileLayout>
     );
 };
 

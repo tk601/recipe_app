@@ -1,8 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Head, router, usePage } from '@inertiajs/react';
 import { Camera, Lock, X, Trash2, LogOut } from 'lucide-react';
-import Header from '@/Components/Mobile/Header';
-import Footer from '@/Components/Mobile/Footer';
+import MobileLayout from '@/Layouts/MobileLayout';
 
 // 型定義
 interface User {
@@ -192,7 +191,7 @@ export default function ProfilePage({ user, recipeCategories }: Props) {
     };
 
     return (
-        <>
+        <MobileLayout currentPage="profile">
             <Head title="プロフィール" />
 
             {/* フラッシュメッセージ */}
@@ -215,8 +214,6 @@ export default function ProfilePage({ user, recipeCategories }: Props) {
             )}
 
             <div className="min-h-screen bg-[var(--base-color)] pb-20 md:pb-8">
-                {/* ヘッダー */}
-                <Header currentPage="profile" />
 
                 {/* PC画面用のコンテナ */}
                 <div className="max-w-6xl mx-auto md:p-8">
@@ -523,7 +520,6 @@ export default function ProfilePage({ user, recipeCategories }: Props) {
                 </div>
             )}
 
-            <Footer currentPage="profile" />
-        </>
+        </MobileLayout>
     );
 }
