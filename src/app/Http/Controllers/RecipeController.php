@@ -224,6 +224,91 @@ class RecipeController extends Controller
     }
 
     /**
+     * レシピを検索（レシピ名または食材名で検索）
+     * 非同期検索用のJSONエンドポイント
+     */
+    public function search(Request $request)
+    {
+        $userId = Auth::id();
+        $query = $request->get('q', '');
+
+        // 検索クエリが空の場合は空配列を返す
+        if (empty(trim($query))) {
+            return response()->json(['recipes' => []]);
+        }
+
+        // ユーザーの冷蔵庫にある食材IDを取得
+        $userIngredientIds = Refrigerator::where('user_id', $userId)
+            ->pluck('ingredients_id')
+            ->toArray();
+
+        // レシピ名または食材名で検索
+        // 公開済みレシピ + 自分の非公開レシピを対象とする
+        $recipes = Recipe::select(
+                'recipes.id as recipe_id',
+                'recipes.recipe_name',
+                'recipes.recipe_image_url',
+                'recipes.recipe_category_id',
+                'recipes.user_id'
+            )
+            ->where(function ($q) use ($userId) {
+                // 公開済みレシピ または 自分のレシピ
+                $q->where('publish_flg', 1)
+                    ->orWhere('user_id', $userId);
+            })
+            ->where(function ($q) use ($query) {
+                // レシピ名で検索 または 食材名で検索
+                $q->where('recipes.recipe_name', 'LIKE', "%{$query}%")
+                    ->orWhereExists(function ($sub) use ($query) {
+                        $sub->select(DB::raw(1))
+                            ->from('recipe_ingredients')
+                            ->join('ingredients', 'recipe_ingredients.ingredients_id', '=', 'ingredients.id')
+                            ->whereColumn('recipe_ingredients.recipe_id', 'recipes.id')
+                            ->where('ingredients.name', 'LIKE', "%{$query}%");
+                    });
+            })
+            ->orderBy('recipes.created_at', 'desc')
+            ->limit(50)
+            ->get()
+            ->map(function ($recipe) use ($userId, $userIngredientIds) {
+                // レシピに必要な食材を取得
+                $recipeIngredients = RecipeIngredient::where('recipe_id', $recipe->recipe_id)
+                    ->join('ingredients', 'recipe_ingredients.ingredients_id', '=', 'ingredients.id')
+                    ->select('ingredients.name')
+                    ->get()
+                    ->pluck('name')
+                    ->toArray();
+
+                $recipe->ingredients = $recipeIngredients;
+
+                // 必要な食材IDを取得して作れるかチェック
+                $requiredIngredientIds = RecipeIngredient::where('recipe_id', $recipe->recipe_id)
+                    ->pluck('ingredients_id')
+                    ->toArray();
+
+                $recipe->can_cook = count(array_diff($requiredIngredientIds, $userIngredientIds)) === 0;
+
+                // いいね数を取得
+                $recipe->likes_count = DB::table('goods')
+                    ->where('recipe_id', $recipe->recipe_id)
+                    ->count();
+
+                // このユーザーがいいねしているかチェック
+                $recipe->is_liked = DB::table('goods')
+                    ->where('recipe_id', $recipe->recipe_id)
+                    ->where('user_id', $userId)
+                    ->exists();
+
+                // 自分のレシピかどうかをチェック
+                $recipe->is_my_recipe = (int)$recipe->user_id === (int)$userId;
+
+                return $recipe;
+            });
+
+        return response()->json(['recipes' => $recipes]);
+    }
+
+    /**
      * お気に入りレシピをJSON形式で返す（無限スクロール用APIエンドポイント）
      */
     public function favoriteList(Request $request)

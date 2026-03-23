@@ -47,6 +47,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/recipes/create', [RecipeController::class, 'create'])->name('recipes.create');
     // 無限スクロール用お気に入りレシピAPIエンドポイント（{id}より前に定義すること）
     Route::get('/recipes/favorite-list', [RecipeController::class, 'favoriteList'])->name('recipes.favorite-list');
+    // レシピ検索APIエンドポイント（{id}より前に定義すること）
+    Route::get('/recipes/search', [RecipeController::class, 'search'])->name('recipes.search');
     Route::post('/recipes', [RecipeController::class, 'store'])->name('recipes.store');
     Route::get('/recipes/{id}', [RecipeController::class, 'show'])->name('recipes.show');
     Route::get('/recipes/{id}/edit', [RecipeController::class, 'edit'])->name('recipes.edit');

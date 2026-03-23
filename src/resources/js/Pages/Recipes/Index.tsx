@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { Head, router, usePage } from '@inertiajs/react';
-import { Heart, Plus, X } from 'lucide-react';
+import { Heart, Plus, X, Search } from 'lucide-react';
 import Header from '@/Components/Mobile/Header';
 import Footer from '@/Components/Mobile/Footer';
 
@@ -122,6 +122,15 @@ export default function RecipesIndex({ categories, favoriteRecipes, favoritesPag
     // フラッシュメッセージの表示状態
     const [showFlash, setShowFlash] = useState(false);
 
+    // 検索クエリの状態管理
+    const [searchQuery, setSearchQuery] = useState('');
+    // 検索結果の状態管理
+    const [searchResults, setSearchResults] = useState<Recipe[]>([]);
+    // 検索中フラグ
+    const [isSearching, setIsSearching] = useState(false);
+    // デバウンス用タイマー
+    const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
     // 蓄積したお気に入りレシピ（無限スクロールで追加していく）
     const [allFavoriteRecipes, setAllFavoriteRecipes] = useState<Recipe[]>(favoriteRecipes);
     // 現在のページネーション状態
@@ -142,6 +151,65 @@ export default function RecipesIndex({ categories, favoriteRecipes, favoritesPag
             return () => clearTimeout(timer);
         }
     }, [flash]);
+
+    /**
+     * 検索ボックスの入力ハンドラ
+     * 入力後300msのデバウンスでAPIを呼ぶ
+     */
+    const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const value = e.target.value;
+        setSearchQuery(value);
+
+        // 既存のタイマーをクリア
+        if (searchTimerRef.current) {
+            clearTimeout(searchTimerRef.current);
+        }
+
+        // 入力が空の場合は検索結果をリセット
+        if (!value.trim()) {
+            setSearchResults([]);
+            setIsSearching(false);
+            return;
+        }
+
+        setIsSearching(true);
+
+        // 300msのデバウンスでAPI呼び出し
+        searchTimerRef.current = setTimeout(async () => {
+            try {
+                const response = await fetch(
+                    route('recipes.search') + `?q=${encodeURIComponent(value)}`,
+                    {
+                        headers: {
+                            'Accept': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest',
+                        },
+                    }
+                );
+
+                if (!response.ok) throw new Error('検索エラー');
+
+                const data = await response.json();
+                setSearchResults(data.recipes);
+            } catch (error) {
+                console.error('レシピの検索に失敗しました:', error);
+            } finally {
+                setIsSearching(false);
+            }
+        }, 300);
+    };
+
+    /**
+     * 検索クエリをクリア
+     */
+    const clearSearch = () => {
+        setSearchQuery('');
+        setSearchResults([]);
+        setIsSearching(false);
+        if (searchTimerRef.current) {
+            clearTimeout(searchTimerRef.current);
+        }
+    };
 
     /**
      * カテゴリ選択時の処理
@@ -297,185 +365,337 @@ export default function RecipesIndex({ categories, favoriteRecipes, favoritesPag
             {/* ヘッダー */}
             <Header currentPage="recipe" />
 
-            {/* カテゴリ選択画面 */}
-            <main className="max-w-7xl mx-auto px-4 py-4">
-                {/* カテゴリ選択セクション */}
-                    <h2
-                        className="text-lg font-bold mb-4"
-                        style={{ color: 'var(--black)' }}
-                    >
-                        カテゴリを選択
-                    </h2>
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-4">
-                        {displayedCategories.map((category) => (
-                            <button
-                                key={category.id}
-                                onClick={() => handleCategorySelect(category.id)}
-                                className="bg-white rounded-lg shadow-sm border p-6 transition-all duration-200 active:scale-95 hover:shadow-md"
-                                style={{ borderColor: 'var(--gray)' }}
-                            >
-                                {/* カテゴリ名 */}
-                                <h3
-                                    className="font-bold text-center text-lg mb-2"
-                                    style={{ color: 'var(--black)' }}
-                                >
-                                    {category.recipe_category_name}
-                                </h3>
-
-                                {/* 作れる料理数 */}
-                                <div
-                                    className="text-sm text-center"
-                                    style={{ color: category.cookable_count > 0 ? 'var(--main-color)' : 'var(--dark-gray)' }}
-                                >
-                                    {category.cookable_count > 0 ? `作れる料理: ${category.cookable_count}件` : '0件'}
-                                </div>
-                            </button>
-                        ))}
-                    </div>
-
-                    {/* もっと見るボタン */}
-                    {hasMoreCategories && !showAllCategories && (
-                        <div className="flex justify-center mb-8">
-                            <button
-                                onClick={() => setShowAllCategories(true)}
-                                className="px-6 py-2 rounded-full font-medium transition-all duration-200 hover:shadow-md"
-                                style={{
-                                    backgroundColor: 'var(--light-gray)',
-                                    color: 'var(--main-color)'
-                                }}
-                            >
-                                もっと見る
-                            </button>
+            {/* 検索ボックス */}
+            <div
+                className="bg-white border-b sticky top-[49px] z-10 px-4 py-3"
+                style={{ borderColor: 'var(--gray)' }}
+            >
+                <div className="max-w-7xl mx-auto">
+                    <div className="relative">
+                        {/* 検索アイコン */}
+                        <div
+                            className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none"
+                            style={{ color: 'var(--dark-gray)' }}
+                        >
+                            <Search className="w-4 h-4" />
                         </div>
-                    )}
+                        <input
+                            type="text"
+                            placeholder="レシピ名・食材名で検索"
+                            value={searchQuery}
+                            onChange={handleSearch}
+                            className="w-full pl-9 pr-9 py-2 rounded-lg border"
+                            style={{ borderColor: 'var(--gray)' }}
+                        />
+                        {/* クリアボタン（入力中のみ表示） */}
+                        {searchQuery && (
+                            <button
+                                onClick={clearSearch}
+                                className="absolute right-3 top-1/2 -translate-y-1/2"
+                                style={{ color: 'var(--dark-gray)' }}
+                            >
+                                <X className="w-4 h-4" />
+                            </button>
+                        )}
+                    </div>
+                </div>
+            </div>
 
-                    {/* お気に入り一覧セクション */}
-                    <div className="mt-8">
+            {/* メインコンテンツ：検索中は検索結果、それ以外はカテゴリ＋お気に入り */}
+            <main className="max-w-7xl mx-auto px-4 py-4">
+                {searchQuery ? (
+                    /* 検索結果セクション */
+                    <div>
                         <h2
                             className="text-lg font-bold mb-4"
                             style={{ color: 'var(--black)' }}
                         >
-                            {/* 総件数も表示 */}
-                            お気に入り
-                            {pagination.total > 0 && (
+                            検索結果
+                            {!isSearching && (
                                 <span
                                     className="ml-2 text-sm font-normal"
                                     style={{ color: 'var(--dark-gray)' }}
                                 >
-                                    {allFavoriteRecipes.length} / {pagination.total}件
+                                    {searchResults.length}件
                                 </span>
                             )}
                         </h2>
 
-                        {allFavoriteRecipes.length > 0 ? (
-                            <>
-                                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                                    {allFavoriteRecipes.map((recipe) => (
-                                        <div
-                                            key={recipe.recipe_id}
-                                            onClick={() => handleRecipeClick(recipe.recipe_id)}
-                                            className="bg-white rounded-lg shadow-sm border overflow-hidden transition-all duration-200 active:scale-95 cursor-pointer"
-                                            style={{ borderColor: 'var(--gray)' }}
-                                        >
-                                            {/* 料理画像（遅延読み込み） */}
-                                            <div className="relative aspect-square">
-                                                <LazyImage
-                                                    src={recipe.recipe_image_url || '/images/no-image.png'}
-                                                    alt={recipe.recipe_name}
+                        {isSearching ? (
+                            // 検索中スピナー
+                            <div className="flex justify-center py-12">
+                                <span
+                                    className="loading loading-spinner loading-md"
+                                    style={{ color: 'var(--main-color)' }}
+                                />
+                            </div>
+                        ) : searchResults.length > 0 ? (
+                            // 検索結果を2列グリッドで表示
+                            <div className="grid grid-cols-2 gap-4">
+                                {searchResults.map((recipe) => (
+                                    <div
+                                        key={recipe.recipe_id}
+                                        onClick={() => handleRecipeClick(recipe.recipe_id)}
+                                        className="bg-white rounded-lg shadow-sm border overflow-hidden transition-all duration-200 active:scale-95 cursor-pointer"
+                                        style={{ borderColor: 'var(--gray)' }}
+                                    >
+                                        {/* 料理画像（遅延読み込み） */}
+                                        <div className="relative aspect-square">
+                                            <LazyImage
+                                                src={recipe.recipe_image_url || '/images/no-image.png'}
+                                                alt={recipe.recipe_name}
+                                            />
+
+                                            {/* いいねボタン */}
+                                            <button
+                                                onClick={(e) => handleLike(e, recipe.recipe_id)}
+                                                className="absolute top-2 right-2 w-8 h-8 rounded-full bg-white/80 flex items-center justify-center transition-all duration-200 hover:bg-white"
+                                            >
+                                                <Heart
+                                                    className="w-5 h-5"
+                                                    style={{
+                                                        color: recipe.is_liked ? 'var(--main-color)' : 'var(--dark-gray)',
+                                                        fill: recipe.is_liked ? 'var(--main-color)' : 'none'
+                                                    }}
                                                 />
+                                            </button>
 
-                                                {/* いいねボタン */}
-                                                <button
-                                                    onClick={(e) => handleLike(e, recipe.recipe_id)}
-                                                    className="absolute top-2 right-2 w-8 h-8 rounded-full bg-white/80 flex items-center justify-center transition-all duration-200 hover:bg-white"
+                                            {/* 作れるバッジ */}
+                                            {recipe.can_cook && (
+                                                <div
+                                                    className="absolute top-2 left-2 px-2 py-1 rounded text-xs font-bold text-white"
+                                                    style={{ backgroundColor: 'var(--main-color)' }}
                                                 >
-                                                    <Heart
-                                                        className="w-5 h-5"
-                                                        style={{
-                                                            color: recipe.is_liked ? 'var(--main-color)' : 'var(--dark-gray)',
-                                                            fill: recipe.is_liked ? 'var(--main-color)' : 'none'
-                                                        }}
-                                                    />
-                                                </button>
+                                                    作れる!
+                                                </div>
+                                            )}
+                                        </div>
 
-                                                {/* 作れるバッジ */}
-                                                {recipe.can_cook && (
-                                                    <div
-                                                        className="absolute top-2 left-2 px-2 py-1 rounded text-xs font-bold text-white"
-                                                        style={{ backgroundColor: 'var(--main-color)' }}
-                                                    >
-                                                        作れる!
-                                                    </div>
-                                                )}
+                                        {/* 料理情報 */}
+                                        <div className="p-3">
+                                            <h3
+                                                className="font-bold text-sm mb-1"
+                                                style={{ color: 'var(--black)' }}
+                                            >
+                                                {recipe.recipe_name}
+                                            </h3>
+
+                                            {/* 食材リスト */}
+                                            <div
+                                                className="text-xs line-clamp-2"
+                                                style={{ color: 'var(--dark-gray)' }}
+                                            >
+                                                {recipe.ingredients.join('、')}
                                             </div>
 
-                                            {/* 料理情報 */}
-                                            <div className="p-3">
-                                                <h3
-                                                    className="font-bold text-sm mb-1"
-                                                    style={{ color: 'var(--black)' }}
-                                                >
-                                                    {recipe.recipe_name}
-                                                </h3>
-
-                                                {/* 食材リスト */}
+                                            {/* いいね数 */}
+                                            {recipe.likes_count > 0 && (
                                                 <div
-                                                    className="text-xs line-clamp-2"
+                                                    className="text-xs mt-2 flex items-center"
                                                     style={{ color: 'var(--dark-gray)' }}
                                                 >
-                                                    {recipe.ingredients.join('、')}
+                                                    <Heart className="w-3 h-3 mr-1" />
+                                                    {recipe.likes_count}
                                                 </div>
-
-                                                {/* いいね数 */}
-                                                {recipe.likes_count > 0 && (
-                                                    <div
-                                                        className="text-xs mt-2 flex items-center"
-                                                        style={{ color: 'var(--dark-gray)' }}
-                                                    >
-                                                        <Heart className="w-3 h-3 mr-1" />
-                                                        {recipe.likes_count}
-                                                    </div>
-                                                )}
-                                            </div>
+                                            )}
                                         </div>
-                                    ))}
-                                </div>
-
-                                {/* 無限スクロールの監視対象（リスト末尾に配置） */}
-                                <div ref={loadMoreRef} className="mt-4 flex justify-center py-4">
-                                    {isLoadingMore && (
-                                        // 読み込み中スピナー
-                                        <span className="loading loading-spinner loading-md" style={{ color: 'var(--main-color)' }} />
-                                    )}
-                                    {!pagination.hasMore && allFavoriteRecipes.length > 0 && (
-                                        // 全件読み込み完了メッセージ
-                                        <p className="text-sm" style={{ color: 'var(--dark-gray)' }}>
-                                            全 {pagination.total} 件を表示しました
-                                        </p>
-                                    )}
-                                </div>
-                            </>
+                                    </div>
+                                ))}
+                            </div>
                         ) : (
+                            // 検索結果なし
                             <div className="text-center py-12">
                                 <p
                                     className="text-sm"
                                     style={{ color: 'var(--dark-gray)' }}
                                 >
-                                    いいねをしたレシピが表示されます！
+                                    「{searchQuery}」に一致するレシピが見つかりませんでした
                                 </p>
                             </div>
                         )}
                     </div>
+                ) : (
+                    /* 通常表示：カテゴリ選択 ＋ お気に入り */
+                    <>
+                        {/* カテゴリ選択セクション */}
+                        <h2
+                            className="text-lg font-bold mb-4"
+                            style={{ color: 'var(--black)' }}
+                        >
+                            カテゴリを選択
+                        </h2>
+                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-4">
+                            {displayedCategories.map((category) => (
+                                <button
+                                    key={category.id}
+                                    onClick={() => handleCategorySelect(category.id)}
+                                    className="bg-white rounded-lg shadow-sm border p-6 transition-all duration-200 active:scale-95 hover:shadow-md"
+                                    style={{ borderColor: 'var(--gray)' }}
+                                >
+                                    {/* カテゴリ名 */}
+                                    <h3
+                                        className="font-bold text-center text-lg mb-2"
+                                        style={{ color: 'var(--black)' }}
+                                    >
+                                        {category.recipe_category_name}
+                                    </h3>
 
-                    {/* レシピ作成ボタン（浮動） */}
-                    <button
-                        onClick={() => router.visit(route('recipes.create'))}
-                        className="fixed bottom-24 md:bottom-20 right-4 md:right-16 px-4 py-3 rounded-full shadow-lg flex items-center gap-2 transition-all duration-200 hover:shadow-xl active:scale-95 z-20"
-                        style={{ backgroundColor: 'var(--main-color)' }}
-                    >
-                        <span className="text-white font-bold text-sm">レシピ作成</span>
-                        <Plus className="w-4 h-4 text-white" />
-                    </button>
+                                    {/* 作れる料理数 */}
+                                    <div
+                                        className="text-sm text-center"
+                                        style={{ color: category.cookable_count > 0 ? 'var(--main-color)' : 'var(--dark-gray)' }}
+                                    >
+                                        {category.cookable_count > 0 ? `作れる料理: ${category.cookable_count}件` : '0件'}
+                                    </div>
+                                </button>
+                            ))}
+                        </div>
+
+                        {/* もっと見るボタン */}
+                        {hasMoreCategories && !showAllCategories && (
+                            <div className="flex justify-center mb-8">
+                                <button
+                                    onClick={() => setShowAllCategories(true)}
+                                    className="px-6 py-2 rounded-full font-medium transition-all duration-200 hover:shadow-md"
+                                    style={{
+                                        backgroundColor: 'var(--light-gray)',
+                                        color: 'var(--main-color)'
+                                    }}
+                                >
+                                    もっと見る
+                                </button>
+                            </div>
+                        )}
+
+                        {/* お気に入り一覧セクション */}
+                        <div className="mt-8">
+                            <h2
+                                className="text-lg font-bold mb-4"
+                                style={{ color: 'var(--black)' }}
+                            >
+                                {/* 総件数も表示 */}
+                                お気に入り
+                                {pagination.total > 0 && (
+                                    <span
+                                        className="ml-2 text-sm font-normal"
+                                        style={{ color: 'var(--dark-gray)' }}
+                                    >
+                                        {allFavoriteRecipes.length} / {pagination.total}件
+                                    </span>
+                                )}
+                            </h2>
+
+                            {allFavoriteRecipes.length > 0 ? (
+                                <>
+                                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                                        {allFavoriteRecipes.map((recipe) => (
+                                            <div
+                                                key={recipe.recipe_id}
+                                                onClick={() => handleRecipeClick(recipe.recipe_id)}
+                                                className="bg-white rounded-lg shadow-sm border overflow-hidden transition-all duration-200 active:scale-95 cursor-pointer"
+                                                style={{ borderColor: 'var(--gray)' }}
+                                            >
+                                                {/* 料理画像（遅延読み込み） */}
+                                                <div className="relative aspect-square">
+                                                    <LazyImage
+                                                        src={recipe.recipe_image_url || '/images/no-image.png'}
+                                                        alt={recipe.recipe_name}
+                                                    />
+
+                                                    {/* いいねボタン */}
+                                                    <button
+                                                        onClick={(e) => handleLike(e, recipe.recipe_id)}
+                                                        className="absolute top-2 right-2 w-8 h-8 rounded-full bg-white/80 flex items-center justify-center transition-all duration-200 hover:bg-white"
+                                                    >
+                                                        <Heart
+                                                            className="w-5 h-5"
+                                                            style={{
+                                                                color: recipe.is_liked ? 'var(--main-color)' : 'var(--dark-gray)',
+                                                                fill: recipe.is_liked ? 'var(--main-color)' : 'none'
+                                                            }}
+                                                        />
+                                                    </button>
+
+                                                    {/* 作れるバッジ */}
+                                                    {recipe.can_cook && (
+                                                        <div
+                                                            className="absolute top-2 left-2 px-2 py-1 rounded text-xs font-bold text-white"
+                                                            style={{ backgroundColor: 'var(--main-color)' }}
+                                                        >
+                                                            作れる!
+                                                        </div>
+                                                    )}
+                                                </div>
+
+                                                {/* 料理情報 */}
+                                                <div className="p-3">
+                                                    <h3
+                                                        className="font-bold text-sm mb-1"
+                                                        style={{ color: 'var(--black)' }}
+                                                    >
+                                                        {recipe.recipe_name}
+                                                    </h3>
+
+                                                    {/* 食材リスト */}
+                                                    <div
+                                                        className="text-xs line-clamp-2"
+                                                        style={{ color: 'var(--dark-gray)' }}
+                                                    >
+                                                        {recipe.ingredients.join('、')}
+                                                    </div>
+
+                                                    {/* いいね数 */}
+                                                    {recipe.likes_count > 0 && (
+                                                        <div
+                                                            className="text-xs mt-2 flex items-center"
+                                                            style={{ color: 'var(--dark-gray)' }}
+                                                        >
+                                                            <Heart className="w-3 h-3 mr-1" />
+                                                            {recipe.likes_count}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+
+                                    {/* 無限スクロールの監視対象（リスト末尾に配置） */}
+                                    <div ref={loadMoreRef} className="mt-4 flex justify-center py-4">
+                                        {isLoadingMore && (
+                                            // 読み込み中スピナー
+                                            <span className="loading loading-spinner loading-md" style={{ color: 'var(--main-color)' }} />
+                                        )}
+                                        {!pagination.hasMore && allFavoriteRecipes.length > 0 && (
+                                            // 全件読み込み完了メッセージ
+                                            <p className="text-sm" style={{ color: 'var(--dark-gray)' }}>
+                                                全 {pagination.total} 件を表示しました
+                                            </p>
+                                        )}
+                                    </div>
+                                </>
+                            ) : (
+                                <div className="text-center py-12">
+                                    <p
+                                        className="text-sm"
+                                        style={{ color: 'var(--dark-gray)' }}
+                                    >
+                                        いいねをしたレシピが表示されます！
+                                    </p>
+                                </div>
+                            )}
+                        </div>
+                    </>
+                )}
+
+                {/* レシピ作成ボタン（浮動） */}
+                <button
+                    onClick={() => router.visit(route('recipes.create'))}
+                    className="fixed bottom-24 md:bottom-20 right-4 md:right-16 px-4 py-3 rounded-full shadow-lg flex items-center gap-2 transition-all duration-200 hover:shadow-xl active:scale-95 z-20"
+                    style={{ backgroundColor: 'var(--main-color)' }}
+                >
+                    <span className="text-white font-bold text-sm">レシピ作成</span>
+                    <Plus className="w-4 h-4 text-white" />
+                </button>
             </main>
 
             {/* フッター */}
