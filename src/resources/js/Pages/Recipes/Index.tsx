@@ -362,14 +362,14 @@ export default function RecipesIndex({ categories, favoriteRecipes, favoritesPag
                 </div>
             )}
 
-            {/* ヘッダー */}
-            <Header currentPage="recipe" />
+            <div className="sticky top-0 z-30">
+                <Header currentPage="recipe" />
 
-            {/* 検索ボックス */}
-            <div
-                className="bg-white border-b sticky top-[49px] z-10 px-4 py-3"
-                style={{ borderColor: 'var(--gray)' }}
-            >
+                {/* 検索ボックス */}
+                <div
+                    className="bg-white border-b px-4 py-3"
+                    style={{ borderColor: 'var(--gray)' }}
+                >
                 <div className="max-w-7xl mx-auto">
                     <div className="relative">
                         {/* 検索アイコン */}
@@ -398,6 +398,7 @@ export default function RecipesIndex({ categories, favoriteRecipes, favoritesPag
                             </button>
                         )}
                     </div>
+                </div>
                 </div>
             </div>
 
