@@ -1,5 +1,5 @@
-import Header from '@/Components/Mobile/Header';
-import Footer from '@/Components/Mobile/Footer';
+import MobileHeader from '@/Layouts/MobileHeader';
+import MobileFooter from '@/Layouts/MobileFooter';
 import { PropsWithChildren } from 'react';
 
 // モバイルレイアウトのProps
@@ -14,9 +14,9 @@ interface MobileLayoutProps {
 export default function MobileLayout({ children, currentPage }: PropsWithChildren<MobileLayoutProps>) {
     return (
         <div>
-            <Header currentPage={currentPage} />
+            <MobileHeader currentPage={currentPage} />
             {children}
-            <Footer currentPage={currentPage} />
+            <MobileFooter currentPage={currentPage} />
         </div>
     );
 }
