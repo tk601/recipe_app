@@ -33,7 +33,7 @@ class ShoppingListController extends Controller
             ->pluck('ingredients_id')
             ->toArray();
 
-        return Inertia::render('Mobile/ShoppingLists', [
+        return Inertia::render('ShoppingLists', [
             'shoppingLists' => $shoppingLists->map(fn($item) => [
                 'id' => $item->id,
                 'ingredients_id' => $item->ingredients_id,

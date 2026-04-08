@@ -24,9 +24,7 @@ Route::get('/dashboard', function () {
 
 // ログインユーザーのみアクセス可能なルート
 Route::middleware('auth')->group(function () {
-    // プロフィール関連（breezeで作成したもの）
-    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
-    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    // プロフィール削除ルート
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
     // モバイル用プロフィール画面
