@@ -51,8 +51,15 @@ const MobileHeader = ({ currentPage }: MobileHeaderProps) => {
             >
                 <div className="max-w-7xl mx-auto px-4 sm:px-6">
                     <div className="flex items-center justify-between py-3">
-                        {/* 左: アプリロゴ */}
-                        <div className="flex-shrink-0">
+                        {/* 左: アプリロゴ（丸いアイコン + テキストロゴ） */}
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                            {/* 丸いアイコン画像 */}
+                            <img
+                                src="/images/gohandoki_logo3.png"
+                                alt="ごはんどきアイコン"
+                                className="h-8 w-8 object-cover rounded-full"
+                            />
+                            {/* テキストロゴ */}
                             <img
                                 src="/images/gohandoki_moji.png"
                                 alt="ごはんどき"

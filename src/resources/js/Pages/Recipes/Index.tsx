@@ -2,6 +2,7 @@ import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react'
 import { Head, router, usePage } from '@inertiajs/react';
 import { Heart, Plus, X, Search } from 'lucide-react';
 import MobileLayout from '@/Layouts/MobileLayout';
+import DesktopLayout from '@/Layouts/DesktopLayout';
 
 interface RecipeCategory {
     id: number;
@@ -152,11 +153,10 @@ export default function RecipesIndex({ categories, favoriteRecipes, favoritesPag
     }, [flash]);
 
     /**
-     * 検索ボックスの入力ハンドラ
+     * 検索値を処理するコア関数（ページ内検索・ヘッダー検索の両方から呼ばれる）
      * 入力後300msのデバウンスでAPIを呼ぶ
      */
-    const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const value = e.target.value;
+    const handleSearchValue = (value: string) => {
         setSearchQuery(value);
 
         // 既存のタイマーをクリア
@@ -196,6 +196,13 @@ export default function RecipesIndex({ categories, favoriteRecipes, favoritesPag
                 setIsSearching(false);
             }
         }, 300);
+    };
+
+    /**
+     * ページ内検索ボックス用ハンドラ（イベントから値を取り出してコア関数へ）
+     */
+    const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+        handleSearchValue(e.target.value);
     };
 
     /**
@@ -335,8 +342,8 @@ export default function RecipesIndex({ categories, favoriteRecipes, favoritesPag
         return () => observer.disconnect();
     }, [loadMoreFavorites]);
 
-    return (
-        <MobileLayout currentPage="recipe">
+    // PC時はDesktopLayout、モバイル時はMobileLayoutを使用
+    const pageContent = (
         <div
             className="min-h-screen pb-20 md:pb-8"
             style={{ backgroundColor: 'var(--base-color)' }}
@@ -362,8 +369,8 @@ export default function RecipesIndex({ categories, favoriteRecipes, favoritesPag
                 </div>
             )}
 
-            {/* 検索ボックス（ヘッダー直下に固定） */}
-            <div
+            {/* 検索ボックス（モバイル時のみ表示。PC時はDesktopHeaderに表示） */}
+            {!isDesktop && <div
                 className="sticky top-14 z-20 bg-white border-b px-4 py-3"
                 style={{ borderColor: 'var(--gray)' }}
             >
@@ -396,7 +403,7 @@ export default function RecipesIndex({ categories, favoriteRecipes, favoritesPag
                         )}
                     </div>
                 </div>
-            </div>
+            </div>}
 
             {/* メインコンテンツ：検索中は検索結果、それ以外はカテゴリ＋お気に入り */}
             <main className="max-w-7xl mx-auto px-4 py-4">
@@ -696,6 +703,20 @@ export default function RecipesIndex({ categories, favoriteRecipes, favoritesPag
             </main>
 
         </div>
+    );
+
+    // PC時はDesktopLayout（ヘッダーに検索ボックスを表示）、モバイル時はMobileLayout
+    return isDesktop ? (
+        <DesktopLayout
+            currentPage="recipe"
+            searchValue={searchQuery}
+            onSearchChange={handleSearchValue}
+        >
+            {pageContent}
+        </DesktopLayout>
+    ) : (
+        <MobileLayout currentPage="recipe">
+            {pageContent}
         </MobileLayout>
     );
 }

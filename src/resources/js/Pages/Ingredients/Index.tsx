@@ -1,8 +1,9 @@
-import React, { useState, useRef, useMemo } from 'react';
+import React, { useState, useRef, useMemo, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { Head, router } from '@inertiajs/react';
 import { Check, X } from 'lucide-react';
 import MobileLayout from '@/Layouts/MobileLayout';
+import DesktopLayout from '@/Layouts/DesktopLayout';
 
 interface Ingredient {
     ingredient_id: number;
@@ -42,6 +43,15 @@ export default function IngredientsIndex({ categories, ingredients, allIngredien
     // 検索クエリの状態管理
     const [search, setSearch] = useState(searchQuery || '');
 
+    // PC/モバイルの判定（768px以上でPC表示）
+    const [isDesktop, setIsDesktop] = useState(false);
+    useEffect(() => {
+        const checkScreenSize = () => setIsDesktop(window.innerWidth >= 768);
+        checkScreenSize();
+        window.addEventListener('resize', checkScreenSize);
+        return () => window.removeEventListener('resize', checkScreenSize);
+    }, []);
+
     // 在庫フィルターの状態管理: 'all' | 'in_stock' | 'out_of_stock'
     const [stockFilter, setStockFilter] = useState<'all' | 'in_stock' | 'out_of_stock'>('all');
 
@@ -77,16 +87,15 @@ export default function IngredientsIndex({ categories, ingredients, allIngredien
      * 検索処理
      * 入力値が変更されたら候補を表示
      */
-    const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const value = e.target.value;
+    // ページ内検索・ヘッダー検索の共通ロジック
+    const handleSearchValue = (value: string) => {
         setSearch(value);
+        setShowSuggestions(value.trim() ? true : false);
+    };
 
-        // 検索候補を表示
-        if (value.trim()) {
-            setShowSuggestions(true);
-        } else {
-            setShowSuggestions(false);
-        }
+    // ページ内検索ボックス用ハンドラ
+    const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+        handleSearchValue(e.target.value);
     };
 
     /**
@@ -196,15 +205,16 @@ export default function IngredientsIndex({ categories, ingredients, allIngredien
         }
     }, [ingredients, stockFilter]);
 
-    return (
-        <MobileLayout currentPage="refrigerators">
+    // PC時はDesktopLayout、モバイル時はMobileLayoutを使用
+    const pageContent = (
         <div
             className="min-h-screen pb-20"
             style={{ backgroundColor: 'var(--base-color)' }}
         >
             <Head title="食材管理 - ごはんどき" />
 
-            {/* 検索ボックス */}
+            {/* 検索ボックス（モバイル時のみ表示。PC時はDesktopHeaderに表示） */}
+            {!isDesktop && (
             <div
                 className="bg-white border-b sticky top-[49px] z-10 px-4 py-3"
                 style={{ borderColor: 'var(--gray)' }}
@@ -224,6 +234,7 @@ export default function IngredientsIndex({ categories, ingredients, allIngredien
                     </div>
                 </div>
             </div>
+            )}
 
             {/* 検索候補のドロップダウン（Portalで描画） */}
             {showSuggestions && searchSuggestions.length > 0 && searchContainerRef.current && createPortal(
@@ -466,6 +477,20 @@ export default function IngredientsIndex({ categories, ingredients, allIngredien
             </main>
 
         </div>
+    );
+
+    // PC時はDesktopLayout（ヘッダーに検索ボックスを表示）、モバイル時はMobileLayout
+    return isDesktop ? (
+        <DesktopLayout
+            currentPage="refrigerators"
+            searchValue={search}
+            onSearchChange={handleSearchValue}
+        >
+            {pageContent}
+        </DesktopLayout>
+    ) : (
+        <MobileLayout currentPage="refrigerators">
+            {pageContent}
         </MobileLayout>
     );
 }

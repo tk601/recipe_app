@@ -4,6 +4,7 @@ import { Head, router } from '@inertiajs/react';
 import { PageProps, ShoppingList } from '@/types';
 import { ShoppingCart, Trash2, Plus, X, Search } from 'lucide-react';
 import MobileLayout from '@/Layouts/MobileLayout';
+import DesktopLayout from '@/Layouts/DesktopLayout';
 
 // 食材の型定義
 interface Ingredient {
@@ -25,6 +26,15 @@ interface ShoppingListsProps extends PageProps {
 }
 
 const ShoppingLists = ({ shoppingLists, ingredients, ingredientCategories }: ShoppingListsProps) => {
+    // PC/モバイルの判定（768px以上でPC表示）
+    const [isDesktop, setIsDesktop] = useState(false);
+    useEffect(() => {
+        const checkScreenSize = () => setIsDesktop(window.innerWidth >= 768);
+        checkScreenSize();
+        window.addEventListener('resize', checkScreenSize);
+        return () => window.removeEventListener('resize', checkScreenSize);
+    }, []);
+
     // 選択された食材のIDを管理
     const [selectedItems, setSelectedItems] = useState<number[]>([]);
 
@@ -316,8 +326,8 @@ const ShoppingLists = ({ shoppingLists, ingredients, ingredientCategories }: Sho
         }
     }, [showIngredientModal]);
 
-    return (
-        <MobileLayout currentPage="shoppingLists">
+    // PC時はDesktopLayout、モバイル時はMobileLayoutを使用
+    const pageContent = (
         <div
             className="min-h-screen pb-20"
             style={{ backgroundColor: 'var(--base-color)' }}
@@ -793,6 +803,16 @@ const ShoppingLists = ({ shoppingLists, ingredients, ingredientCategories }: Sho
             )}
 
         </div>
+    );
+
+    // PC時はDesktopLayout（検索なし・作成ボタンあり）、モバイル時はMobileLayout
+    return isDesktop ? (
+        <DesktopLayout currentPage="shoppingLists">
+            {pageContent}
+        </DesktopLayout>
+    ) : (
+        <MobileLayout currentPage="shoppingLists">
+            {pageContent}
         </MobileLayout>
     );
 };

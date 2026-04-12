@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Head, router, usePage } from '@inertiajs/react';
 import { Camera, Lock, X, Trash2, LogOut } from 'lucide-react';
 import MobileLayout from '@/Layouts/MobileLayout';
+import DesktopLayout from '@/Layouts/DesktopLayout';
 
 // 型定義
 interface User {
@@ -41,6 +42,15 @@ export default function ProfilePage({ user, recipeCategories }: Props) {
     // フラッシュメッセージを取得
     const page = usePage<PageProps>();
     const flash = page.props.flash;
+
+    // PC/モバイルの判定（768px以上でPC表示）
+    const [isDesktop, setIsDesktop] = useState(false);
+    useEffect(() => {
+        const checkScreenSize = () => setIsDesktop(window.innerWidth >= 768);
+        checkScreenSize();
+        window.addEventListener('resize', checkScreenSize);
+        return () => window.removeEventListener('resize', checkScreenSize);
+    }, []);
 
     // 状態管理
     const [isEditingProfile, setIsEditingProfile] = useState(false);
@@ -190,8 +200,9 @@ export default function ProfilePage({ user, recipeCategories }: Props) {
         router.post(route('logout'));
     };
 
-    return (
-        <MobileLayout currentPage="profile">
+    // PC時はDesktopLayout、モバイル時はMobileLayoutを使用
+    const pageContent = (
+        <>
             <Head title="プロフィール" />
 
             {/* フラッシュメッセージ */}
@@ -520,6 +531,16 @@ export default function ProfilePage({ user, recipeCategories }: Props) {
                 </div>
             )}
 
+        </>
+    );
+
+    return isDesktop ? (
+        <DesktopLayout currentPage="profile">
+            {pageContent}
+        </DesktopLayout>
+    ) : (
+        <MobileLayout currentPage="profile">
+            {pageContent}
         </MobileLayout>
     );
 }

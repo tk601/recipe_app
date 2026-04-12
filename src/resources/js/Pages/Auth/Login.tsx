@@ -40,6 +40,13 @@ export default function Login({
                     style={{ borderTop: '4px solid var(--main-color)' }}
                 >
                     <div className="text-center mb-6">
+                        {/* 丸いアイコン画像 */}
+                        <img
+                            src="/images/gohandoki_logo3.png"
+                            alt="ごはんどきアイコン"
+                            className="mx-auto h-20 w-20 object-cover rounded-full mb-3"
+                        />
+                        {/* テキストロゴ */}
                         <img
                             src="/images/gohandoki_moji.png"
                             alt="ごはんどき"
