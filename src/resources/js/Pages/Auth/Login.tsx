@@ -42,7 +42,7 @@ export default function Login({
                     <div className="text-center mb-6">
                         {/* 丸いアイコン画像 */}
                         <img
-                            src="/images/gohandoki_logo3.png"
+                            src="/images/gohandoki_logo4.png"
                             alt="ごはんどきアイコン"
                             className="mx-auto h-20 w-20 object-cover rounded-full mb-3"
                         />
