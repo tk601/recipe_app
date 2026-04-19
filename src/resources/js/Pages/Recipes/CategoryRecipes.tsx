@@ -60,7 +60,7 @@ export default function CategoryRecipes({ category, recipes }: Props) {
     // フィルターの状態管理: 'all' | 'cookable' | 'my_recipe'
     // URLパラメータがあればそれを使用、なければデフォルトの'cookable'
     const [recipeFilter, setRecipeFilter] = useState<'cookable' | 'all' | 'my_recipe'>(
-        filterParam && ['cookable', 'all', 'my_recipe'].includes(filterParam) ? filterParam : 'cookable'
+        filterParam && ['cookable', 'all', 'my_recipe'].includes(filterParam) ? filterParam : 'all'
     );
     // 検索キーワードの状態管理
     const [searchQuery, setSearchQuery] = useState('');
