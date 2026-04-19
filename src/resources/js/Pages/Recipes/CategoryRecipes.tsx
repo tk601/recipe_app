@@ -356,7 +356,7 @@ export default function CategoryRecipes({ category, recipes }: Props) {
                     />
                     <input
                         type="text"
-                        placeholder="料理名・食材で検索"
+                        placeholder="レシピ名・食材名で検索"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         className="w-full pl-9 pr-4 py-2 rounded-lg border focus:outline-none focus:ring-2 text-sm"
