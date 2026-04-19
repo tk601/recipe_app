@@ -1,7 +1,8 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Head, router, usePage } from '@inertiajs/react';
 import { Heart, ArrowLeft, Search, Plus, X } from 'lucide-react';
-import Footer from '@/Components/Mobile/Footer';
+import MobileLayout from '@/Layouts/MobileLayout';
+import DesktopLayout from '@/Layouts/DesktopLayout';
 
 interface RecipeCategory {
     id: number;
@@ -59,6 +60,19 @@ export default function CategoryRecipes({ category, recipes }: Props) {
     // フラッシュメッセージの表示状態
     const [showFlash, setShowFlash] = useState(false);
 
+    // 画面サイズを判定（768px以上をPC画面とする）
+    const [isDesktop, setIsDesktop] = useState(false);
+
+    useEffect(() => {
+        // 初回レンダリング時に画面サイズをチェック
+        const checkScreenSize = () => {
+            setIsDesktop(window.innerWidth >= 768);
+        };
+        checkScreenSize();
+        window.addEventListener('resize', checkScreenSize);
+        return () => window.removeEventListener('resize', checkScreenSize);
+    }, []);
+
     // フラッシュメッセージが存在する場合に表示
     useEffect(() => {
         if (flash?.success || flash?.error) {
@@ -102,6 +116,13 @@ export default function CategoryRecipes({ category, recipes }: Props) {
     };
 
     /**
+     * デスクトップヘッダーの検索ボックスから呼ばれるハンドラ
+     */
+    const handleSearchValue = (value: string) => {
+        setSearchQuery(value);
+    };
+
+    /**
      * フィルターと検索に基づいてレシピをフィルタリング
      */
     const filteredRecipes = useMemo(() => {
@@ -128,7 +149,7 @@ export default function CategoryRecipes({ category, recipes }: Props) {
         return filtered;
     }, [recipes, recipeFilter, searchQuery]);
 
-    return (
+    const pageContent = (
         <div
             className="min-h-screen pb-20 md:pb-8"
             style={{ backgroundColor: 'var(--base-color)' }}
@@ -154,12 +175,14 @@ export default function CategoryRecipes({ category, recipes }: Props) {
                 </div>
             )}
 
-            {/* ヘッダー */}
-            <header className="bg-white shadow-sm sticky top-0 z-10">
+            {/* サブヘッダー：戻るボタン・カテゴリ名・検索（モバイルのみ）・フィルター */}
+            <div
+                className="sticky top-14 md:top-16 z-20 bg-white border-b"
+                style={{ borderColor: 'var(--gray)' }}
+            >
                 <div className="max-w-7xl mx-auto px-4 sm:px-6">
-                    {/* タイトルバー */}
+                    {/* タイトルバー：戻るボタン + カテゴリ名 */}
                     <div className="py-3 flex items-center border-b" style={{ borderColor: 'var(--gray)' }}>
-                        {/* 戻るボタン */}
                         <button
                             onClick={handleBackToCategories}
                             className="mr-3 p-2 rounded-full hover:bg-gray-100 transition-colors"
@@ -169,8 +192,6 @@ export default function CategoryRecipes({ category, recipes }: Props) {
                                 style={{ color: 'var(--main-color)' }}
                             />
                         </button>
-
-                        {/* カテゴリ名 */}
                         <h1
                             className="text-xl font-bold"
                             style={{ color: 'var(--main-color)' }}
@@ -179,29 +200,31 @@ export default function CategoryRecipes({ category, recipes }: Props) {
                         </h1>
                     </div>
 
-                    {/* 検索ボックス */}
-                    <div className="py-3">
-                        <div className="relative">
-                            <Search
-                                className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5"
-                                style={{ color: 'var(--dark-gray)' }}
-                            />
-                            <input
-                                type="text"
-                                placeholder="料理名・食材で検索"
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                className="w-full pl-10 pr-4 py-2 rounded-lg border focus:outline-none focus:ring-2"
-                                style={{
-                                    borderColor: 'var(--gray)',
-                                    '--tw-ring-color': 'var(--main-color)'
-                                } as React.CSSProperties}
-                            />
+                    {/* 検索ボックス（モバイル時のみ表示。PC時はDesktopHeaderに表示） */}
+                    {!isDesktop && (
+                        <div className="py-3">
+                            <div className="relative">
+                                <Search
+                                    className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5"
+                                    style={{ color: 'var(--dark-gray)' }}
+                                />
+                                <input
+                                    type="text"
+                                    placeholder="料理名・食材で検索"
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    className="w-full pl-10 pr-4 py-2 rounded-lg border focus:outline-none focus:ring-2"
+                                    style={{
+                                        borderColor: 'var(--gray)',
+                                        '--tw-ring-color': 'var(--main-color)'
+                                    } as React.CSSProperties}
+                                />
+                            </div>
                         </div>
-                    </div>
+                    )}
 
                     {/* フィルターボタン */}
-                    <div className="flex space-x-2 pb-3 px-0 overflow-x-auto">
+                    <div className="flex space-x-2 py-3 overflow-x-auto">
                         <button
                             onClick={() => setRecipeFilter('cookable')}
                             className={`px-4 py-2 rounded-full text-sm font-medium transition-all whitespace-nowrap ${
@@ -240,12 +263,12 @@ export default function CategoryRecipes({ category, recipes }: Props) {
                         </button>
                     </div>
                 </div>
-            </header>
+            </div>
 
             {/* レシピ一覧 */}
             <main className="max-w-7xl mx-auto px-4 py-4">
                 {filteredRecipes.length > 0 ? (
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                         {filteredRecipes.map((recipe) => (
                             <div
                                 key={recipe.recipe_id}
@@ -328,19 +351,32 @@ export default function CategoryRecipes({ category, recipes }: Props) {
                         </p>
                     </div>
                 )}
-                {/* レシピ作成ボタン（浮動） */}
+
+                {/* レシピ作成ボタン（浮動）※PC画面では非表示 */}
                 <button
                     onClick={() => router.visit(route('recipes.create'))}
-                    className="fixed bottom-24 md:bottom-20 right-4 md:right-16 px-4 py-3 rounded-full shadow-lg flex items-center gap-2 transition-all duration-200 hover:shadow-xl active:scale-95 z-20"
+                    className="md:hidden fixed bottom-24 right-4 px-4 py-3 rounded-full shadow-lg flex items-center gap-2 transition-all duration-200 hover:shadow-xl active:scale-95 z-20"
                     style={{ backgroundColor: 'var(--main-color)' }}
                 >
                     <span className="text-white font-bold text-sm">レシピ作成</span>
                     <Plus className="w-4 h-4 text-white" />
                 </button>
             </main>
-
-            {/* フッター */}
-            <Footer currentPage="recipe" />
         </div>
+    );
+
+    // PC時はDesktopLayout（ヘッダーに検索ボックスを表示）、モバイル時はMobileLayout
+    return isDesktop ? (
+        <DesktopLayout
+            currentPage="recipe"
+            searchValue={searchQuery}
+            onSearchChange={handleSearchValue}
+        >
+            {pageContent}
+        </DesktopLayout>
+    ) : (
+        <MobileLayout currentPage="recipe">
+            {pageContent}
+        </MobileLayout>
     );
 }
