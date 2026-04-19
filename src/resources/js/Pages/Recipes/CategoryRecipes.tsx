@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, useRef } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Head, router, usePage } from '@inertiajs/react';
 import { Heart, ArrowLeft, Search, Plus, X, SlidersHorizontal } from 'lucide-react';
 import MobileLayout from '@/Layouts/MobileLayout';
@@ -68,10 +68,6 @@ export default function CategoryRecipes({ category, recipes }: Props) {
     const [showFlash, setShowFlash] = useState(false);
     // スマホ用フィルターパネルの開閉状態
     const [isFilterOpen, setIsFilterOpen] = useState(false);
-    // スマホ用検索ボックスの表示状態（下スクロールで非表示）
-    const [isSearchVisible, setIsSearchVisible] = useState(true);
-    // 直前のスクロール位置を保持するref
-    const lastScrollYRef = useRef(0);
 
     // 画面サイズを判定（768px以上をPC画面とする）
     const [isDesktop, setIsDesktop] = useState(false);
@@ -98,26 +94,6 @@ export default function CategoryRecipes({ category, recipes }: Props) {
         }
     }, [flash]);
 
-    /**
-     * スクロール方向を検知して検索ボックスの表示を制御する（スマホ用）
-     * 下スクロール時に非表示、上スクロール時に表示
-     */
-    useEffect(() => {
-        const handleScroll = () => {
-            const currentScrollY = window.scrollY;
-            if (currentScrollY > lastScrollYRef.current && currentScrollY > 50) {
-                // 下スクロール：検索ボックスを非表示
-                setIsSearchVisible(false);
-            } else if (currentScrollY < lastScrollYRef.current) {
-                // 上スクロール：検索ボックスを表示
-                setIsSearchVisible(true);
-            }
-            lastScrollYRef.current = currentScrollY;
-        };
-
-        window.addEventListener('scroll', handleScroll, { passive: true });
-        return () => window.removeEventListener('scroll', handleScroll);
-    }, []);
 
     /**
      * カテゴリ選択画面に戻る
@@ -368,30 +344,27 @@ export default function CategoryRecipes({ category, recipes }: Props) {
                         </>
                     )}
 
-                    {/* 検索ボックス（下スクロールで非表示、上スクロールで再表示） */}
-                    <div
-                        className={`overflow-hidden transition-all duration-300 ${
-                            isSearchVisible ? 'max-h-20 pb-3' : 'max-h-0 pb-0'
-                        }`}
-                    >
-                        <div className="relative">
-                            <Search
-                                className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 pointer-events-none"
-                                style={{ color: 'var(--dark-gray)' }}
-                            />
-                            <input
-                                type="text"
-                                placeholder="料理名・食材で検索"
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                className="w-full pl-9 pr-4 py-2 rounded-lg border focus:outline-none focus:ring-2 text-sm"
-                                style={{
-                                    borderColor: 'var(--gray)',
-                                    '--tw-ring-color': 'var(--main-color)'
-                                } as React.CSSProperties}
-                            />
-                        </div>
-                    </div>
+                </div>
+            </div>
+
+            {/* 検索ボックス（スマホのみ表示・スティッキー外に配置してスクロールで自然に消える） */}
+            <div className="md:hidden bg-white border-b px-4 py-3" style={{ borderColor: 'var(--gray)' }}>
+                <div className="relative">
+                    <Search
+                        className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 pointer-events-none"
+                        style={{ color: 'var(--dark-gray)' }}
+                    />
+                    <input
+                        type="text"
+                        placeholder="料理名・食材で検索"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="w-full pl-9 pr-4 py-2 rounded-lg border focus:outline-none focus:ring-2 text-sm"
+                        style={{
+                            borderColor: 'var(--gray)',
+                            '--tw-ring-color': 'var(--main-color)'
+                        } as React.CSSProperties}
+                    />
                 </div>
             </div>
 
