@@ -56,16 +56,33 @@ const getPageConfig = (page?: PageType) => {
     }
 };
 
+/** 右側に表示するナビゲーションリンクの定義 */
+const navLinks = [
+    {
+        label: 'レシピ',
+        href: route('recipes.index'),
+        icon: CookingPot,
+        page: 'recipe' as PageType,
+    },
+    {
+        label: '冷蔵庫',
+        href: route('ingredients.index'),
+        icon: Refrigerator,
+        page: 'refrigerators' as PageType,
+    },
+    {
+        label: '買い物リスト',
+        href: route('shopping-lists.index'),
+        icon: ShoppingCart,
+        page: 'shoppingLists' as PageType,
+    },
+];
+
 /**
  * PC用共通ヘッダーコンポーネント
  * 左: ハンバーガーメニュー + アプリロゴ
- * 中央: 検索ボックス（ページによって表示切替）
- * 右: 作成ボタン（ページによって表示切替）
- *
- * ページごとの表示:
- * - recipe:       レシピ検索ボックス + レシピ作成ボタン
- * - refrigerators: 材料検索ボックス + 材料作成ボタン
- * - shoppingLists: 検索ボックスなし + 材料作成ボタン
+ * 中央: 検索ボックス + 作成ボタン（検索ボックスのすぐ右）
+ * 右: ナビリンク（レシピ・冷蔵庫・買い物リスト）※現在のページは非表示
  */
 const DesktopHeader = ({
     currentPage,
@@ -80,26 +97,9 @@ const DesktopHeader = ({
     // ページ設定の取得
     const config = getPageConfig(currentPage);
 
-    // ナビゲーション項目の定義
-    const navItems = [
-        {
-            label: 'レシピ',
-            href: route('recipes.index'),
-            icon: CookingPot,
-            page: 'recipe' as PageType,
-        },
-        {
-            label: '冷蔵庫',
-            href: route('ingredients.index'),
-            icon: Refrigerator,
-            page: 'refrigerators' as PageType,
-        },
-        {
-            label: '買い物リスト',
-            href: route('shopping-lists.index'),
-            icon: ShoppingCart,
-            page: 'shoppingLists' as PageType,
-        },
+    // ハンバーガーメニューのナビゲーション項目
+    const drawerNavItems = [
+        ...navLinks,
         {
             label: 'ユーザー',
             href: route('mobile.profile'),
@@ -149,12 +149,12 @@ const DesktopHeader = ({
                             </Link>
                         </div>
 
-                        {/* 中央: 検索ボックス（ページによって表示切替） */}
-                        <div className="flex-1 flex justify-center">
+                        {/* 中央: 検索ボックス + 作成ボタン（検索ボックスのすぐ右に配置） */}
+                        <div className="flex-1 flex items-center gap-2">
                             {config.showSearch && (
                                 <form
                                     onSubmit={handleSearchSubmit}
-                                    className="w-full max-w-xl"
+                                    className="flex-1 max-w-xl"
                                 >
                                     <div className="relative">
                                         {/* 検索アイコン */}
@@ -177,26 +177,24 @@ const DesktopHeader = ({
                                     </div>
                                 </form>
                             )}
-                        </div>
 
-                        {/* 右: 作成ボタン（ページによって表示切替） */}
-                        <div className="flex-shrink-0">
+                            {/* 作成ボタン（検索ボックスのすぐ右） */}
                             {config.showCreate && (
                                 config.createHref ? (
                                     /* hrefがある場合はLinkコンポーネントで遷移 */
                                     <Link
                                         href={config.createHref}
-                                        className="flex items-center gap-2 px-4 py-2 rounded-lg text-white text-sm font-medium hover:opacity-90 transition-opacity"
+                                        className="flex items-center gap-2 px-4 py-2 rounded-lg text-white text-sm font-medium hover:opacity-90 transition-opacity flex-shrink-0"
                                         style={{ backgroundColor: 'var(--main-color)' }}
                                     >
                                         <Plus className="w-4 h-4" />
                                         {config.createLabel}
                                     </Link>
                                 ) : (
-                                    /* hrefがない場合はonCreateClickコールバックを使用（機能は後で実装） */
+                                    /* hrefがない場合はonCreateClickコールバックを使用 */
                                     <button
                                         onClick={onCreateClick}
-                                        className="flex items-center gap-2 px-4 py-2 rounded-lg text-white text-sm font-medium hover:opacity-90 transition-opacity"
+                                        className="flex items-center gap-2 px-4 py-2 rounded-lg text-white text-sm font-medium hover:opacity-90 transition-opacity flex-shrink-0"
                                         style={{ backgroundColor: 'var(--main-color)' }}
                                     >
                                         <Plus className="w-4 h-4" />
@@ -204,6 +202,29 @@ const DesktopHeader = ({
                                     </button>
                                 )
                             )}
+                        </div>
+
+                        {/* 右: ナビゲーションリンク（現在表示中のページは非表示） */}
+                        <div className="flex items-center gap-1 flex-shrink-0">
+                            {navLinks
+                                .filter((link) => link.page !== currentPage)
+                                .map((link) => {
+                                    const Icon = link.icon;
+                                    return (
+                                        <Link
+                                            key={link.page}
+                                            href={link.href}
+                                            className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium hover:bg-gray-100 transition-colors"
+                                            style={{ color: 'var(--black)' }}
+                                        >
+                                            <Icon
+                                                className="w-4 h-4"
+                                                style={{ color: 'var(--dark-gray)' }}
+                                            />
+                                            {link.label}
+                                        </Link>
+                                    );
+                                })}
                         </div>
 
                     </div>
@@ -254,7 +275,7 @@ const DesktopHeader = ({
 
                 {/* ナビゲーション項目 */}
                 <nav className="py-2">
-                    {navItems.map((item) => {
+                    {drawerNavItems.map((item) => {
                         const Icon = item.icon;
                         const isActive = currentPage === item.page;
                         return (
