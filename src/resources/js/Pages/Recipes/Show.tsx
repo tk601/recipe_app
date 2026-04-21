@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Head, router, usePage } from '@inertiajs/react';
 import { ArrowLeft, Heart, Refrigerator as RefrigeratorIcon, X, Edit } from 'lucide-react';
 import MobileLayout from '@/Layouts/MobileLayout';
@@ -70,6 +70,10 @@ export default function RecipeShow({ recipe, ingredients, instructions }: Props)
     // 画面サイズを判定（768px以上をPC画面とする）
     const [isDesktop, setIsDesktop] = useState(false);
 
+    // PC用サブヘッダーの表示状態（下スクロール時に非表示）
+    const [isSubHeaderVisible, setIsSubHeaderVisible] = useState(true);
+    const lastScrollYRef = useRef(0);
+
     // 自分のレシピかどうかを判定
     const isOwner = recipe != null && currentUser != null && recipe.user_id === currentUser.id;
 
@@ -81,6 +85,24 @@ export default function RecipeShow({ recipe, ingredients, instructions }: Props)
         checkScreenSize();
         window.addEventListener('resize', checkScreenSize);
         return () => window.removeEventListener('resize', checkScreenSize);
+    }, []);
+
+    // スクロール方向を検知してPC用サブヘッダーの表示を制御する
+    useEffect(() => {
+        const handleScroll = () => {
+            const currentScrollY = window.scrollY;
+            if (currentScrollY > lastScrollYRef.current && currentScrollY > 60) {
+                // 下スクロール：サブヘッダーを非表示
+                setIsSubHeaderVisible(false);
+            } else {
+                // 上スクロール or ページ上部付近：サブヘッダーを表示
+                setIsSubHeaderVisible(true);
+            }
+            lastScrollYRef.current = currentScrollY;
+        };
+
+        window.addEventListener('scroll', handleScroll, { passive: true });
+        return () => window.removeEventListener('scroll', handleScroll);
     }, []);
 
     // フラッシュメッセージが存在する場合に表示
@@ -408,17 +430,39 @@ export default function RecipeShow({ recipe, ingredients, instructions }: Props)
                     <Head title={`${recipe.recipe_name} - ごはんどき`} />
                     {flashMessage}
 
-                    <div className="max-w-7xl mx-auto px-4 py-6">
-                        {/* 戻るボタン */}
-                        <button
-                            onClick={handleBack}
-                            className="flex items-center gap-1.5 mb-4 px-3 py-2 rounded-lg transition-colors hover:bg-white text-sm font-medium"
-                            style={{ color: 'var(--dark-gray)' }}
-                        >
-                            <ArrowLeft className="w-4 h-4" />
-                            <span>戻る</span>
-                        </button>
+                    {/* ===== PC用サブヘッダー ===== */}
+                    {/* 左：戻るボタン＋レシピ名　右：いいね・編集ボタン */}
+                    {/* 下スクロール時に -translate-y-full でヘッダー裏に隠れる */}
+                    <div
+                        className={`sticky top-16 z-20 bg-white border-b transition-transform duration-300 ${
+                            isSubHeaderVisible ? 'translate-y-0' : '-translate-y-full'
+                        }`}
+                        style={{ borderColor: 'var(--gray)' }}
+                    >
+                        <div className="max-w-7xl mx-auto px-4 sm:px-6">
+                            <div className="flex items-center justify-between py-3">
+                                {/* 左：戻るボタン＋レシピ名 */}
+                                <button
+                                    onClick={handleBack}
+                                    className="flex items-center gap-2 p-2 rounded-lg hover:bg-gray-100 transition-colors min-w-0"
+                                >
+                                    <ArrowLeft
+                                        className="w-5 h-5 flex-shrink-0"
+                                        style={{ color: 'var(--main-color)' }}
+                                    />
+                                    <span
+                                        className="text-xl font-bold truncate"
+                                        style={{ color: 'var(--main-color)' }}
+                                    >
+                                        {recipe.recipe_name}
+                                    </span>
+                                </button>
 
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="max-w-7xl mx-auto px-4 py-6">
                         {/* 上部: レシピ画像（左）+ レシピ情報（右） */}
                         <div className="bg-white rounded-xl shadow-sm overflow-hidden">
                             <div className="grid grid-cols-5">
@@ -599,7 +643,7 @@ export default function RecipeShow({ recipe, ingredients, instructions }: Props)
                             <div className="col-span-1">
                                 <div
                                     className="bg-white rounded-xl shadow-sm p-6 sticky"
-                                    style={{ top: '88px' }}
+                                    style={{ top: '120px' }}
                                 >
                                     <div
                                         className="flex justify-between items-center mb-4 pb-2 border-b"
