@@ -363,15 +363,19 @@ class RecipeController extends Controller
             ]);
         }
 
-        // レシピの材料一覧を取得
+        // レシピの材料一覧を取得（食材カテゴリ情報を含む）
         $ingredients = RecipeIngredient::where('recipe_ingredients.recipe_id', $id)
             ->join('ingredients', 'recipe_ingredients.ingredients_id', '=', 'ingredients.id')
+            ->leftJoin('ingredient_categories', 'ingredients.ingredient_category_id', '=', 'ingredient_categories.id')
             ->select(
                 'ingredients.id',
                 'ingredients.name as ingredient_name',
                 'recipe_ingredients.quantity',
-                'recipe_ingredients.unit'
+                'recipe_ingredients.unit',
+                'ingredient_categories.id as category_id',
+                'ingredient_categories.name as category_name'
             )
+            ->orderBy('ingredient_categories.id')
             ->get();
 
         // ユーザーの冷蔵庫にある食材IDを取得
