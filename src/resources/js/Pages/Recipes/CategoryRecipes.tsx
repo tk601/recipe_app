@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { Head, router, usePage } from '@inertiajs/react';
 import { Heart, ArrowLeft, Search, Plus, X, SlidersHorizontal } from 'lucide-react';
 import MobileLayout from '@/Layouts/MobileLayout';
@@ -72,6 +72,10 @@ export default function CategoryRecipes({ category, recipes }: Props) {
     // 画面サイズを判定（768px以上をPC画面とする）
     const [isDesktop, setIsDesktop] = useState(false);
 
+    // PC用サブヘッダーの表示状態（下スクロール時に非表示）
+    const [isSubHeaderVisible, setIsSubHeaderVisible] = useState(true);
+    const lastScrollYRef = useRef(0);
+
     useEffect(() => {
         // 初回レンダリング時に画面サイズをチェック
         const checkScreenSize = () => {
@@ -80,6 +84,24 @@ export default function CategoryRecipes({ category, recipes }: Props) {
         checkScreenSize();
         window.addEventListener('resize', checkScreenSize);
         return () => window.removeEventListener('resize', checkScreenSize);
+    }, []);
+
+    // スクロール方向を検知してPC用サブヘッダーの表示を制御する
+    useEffect(() => {
+        const handleScroll = () => {
+            const currentScrollY = window.scrollY;
+            if (currentScrollY > lastScrollYRef.current && currentScrollY > 60) {
+                // 下スクロール：サブヘッダーを非表示
+                setIsSubHeaderVisible(false);
+            } else {
+                // 上スクロール or ページ上部付近：サブヘッダーを表示
+                setIsSubHeaderVisible(true);
+            }
+            lastScrollYRef.current = currentScrollY;
+        };
+
+        window.addEventListener('scroll', handleScroll, { passive: true });
+        return () => window.removeEventListener('scroll', handleScroll);
     }, []);
 
     // フラッシュメッセージが存在する場合に表示
@@ -196,8 +218,11 @@ export default function CategoryRecipes({ category, recipes }: Props) {
 
             {/* ===== PC用サブヘッダー ===== */}
             {/* 左：戻るボタン＋カテゴリ名　右：フィルターボタン（横並び） */}
+            {/* 下スクロール時に -translate-y-full でヘッダー裏に隠れる */}
             <div
-                className="hidden md:block sticky top-16 z-20 bg-white border-b"
+                className={`hidden md:block sticky top-16 z-20 bg-white border-b transition-transform duration-300 ${
+                    isSubHeaderVisible ? 'translate-y-0' : '-translate-y-full'
+                }`}
                 style={{ borderColor: 'var(--gray)' }}
             >
                 <div className="max-w-7xl mx-auto px-4 sm:px-6">
