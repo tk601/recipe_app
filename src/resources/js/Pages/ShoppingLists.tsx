@@ -243,6 +243,7 @@ const ShoppingLists = ({ shoppingLists, ingredients, ingredientCategories }: Sho
         }, {
             onSuccess: () => {
                 closeCustomItemModal();
+                closeIngredientModal(); // 材料選択モーダルも閉じる
             },
         });
     };
