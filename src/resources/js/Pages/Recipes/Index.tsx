@@ -678,13 +678,13 @@ export default function RecipesIndex({ categories, favoriteRecipes, favoritesPag
                                     </div>
                                 </>
                             ) : (
-                                <div className="text-center py-12">
-                                    <p
-                                        className="text-sm"
-                                        style={{ color: 'var(--dark-gray)' }}
-                                    >
-                                        いいねをしたレシピが表示されます！
-                                    </p>
+                                <div className="text-center py-8">
+                                    {/* PC/スマホで異なる空状態画像を表示 */}
+                                    <img
+                                        src={isDesktop ? '/images/resipe_message_pc.png' : '/images/resipe_message_sp.png'}
+                                        alt="いいねをしたレシピが表示されます"
+                                        className="mx-auto max-w-full"
+                                    />
                                 </div>
                             )}
                         </div>

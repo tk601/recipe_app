@@ -337,29 +337,21 @@ const ShoppingLists = ({ shoppingLists, ingredients, ingredientCategories }: Sho
             {/* 買い物リストの内容 */}
             <main className="max-w-7xl mx-auto px-4 py-4">
                 {shoppingLists.length === 0 ? (
-                    // 空の状態
-                    <div className="text-center py-16">
-                        <div
-                            className="inline-flex items-center justify-center w-16 h-16 rounded-full mb-4"
-                            style={{ backgroundColor: 'var(--light-gray)' }}
+                    // 空の状態：PC/スマホで異なる画像を表示＋リスト追加ボタン
+                    <div className="text-center py-8">
+                        <img
+                            src={isDesktop ? '/images/shopping_message_pc.png' : '/images/shopping_message_sp.png'}
+                            alt="買い物リストは空です"
+                            className="mx-auto max-w-full"
+                        />
+                        <button
+                            onClick={openIngredientModal}
+                            className="mt-6 px-6 py-3 rounded-full shadow-lg flex items-center gap-2 mx-auto transition-all duration-200 hover:shadow-xl active:scale-95"
+                            style={{ backgroundColor: 'var(--main-color)' }}
                         >
-                            <ShoppingCart
-                                className="w-8 h-8"
-                                style={{ color: 'var(--dark-gray)' }}
-                            />
-                        </div>
-                        <h3
-                            className="text-lg font-medium mb-2"
-                            style={{ color: 'var(--black)' }}
-                        >
-                            買い物リストは空です
-                        </h3>
-                        <p
-                            className="text-sm"
-                            style={{ color: 'var(--dark-gray)' }}
-                        >
-                            リストを作成しましょう
-                        </p>
+                            <span className="text-white font-bold text-sm">買い物リスト作成</span>
+                            <Plus className="w-4 h-4 text-white" />
+                        </button>
                     </div>
                 ) : (
                     <>
@@ -455,8 +447,8 @@ const ShoppingLists = ({ shoppingLists, ingredients, ingredientCategories }: Sho
                 )}
             </main>
 
-            {/* 材料追加フローティングボタン */}
-            {selectedItems.length === 0 && (
+            {/* 材料追加フローティングボタン（アイテムがある時のみ表示） */}
+            {shoppingLists.length > 0 && selectedItems.length === 0 && (
                 <button
                     onClick={openIngredientModal}
                     className="fixed bottom-24 md:bottom-20 right-4 md:right-16 px-4 py-3 rounded-full shadow-lg flex items-center gap-2 transition-all duration-200 hover:shadow-xl active:scale-95 z-20"
