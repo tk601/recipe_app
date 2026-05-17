@@ -2,7 +2,7 @@ import { useState, useRef, useMemo, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { Head, router } from '@inertiajs/react';
 import { PageProps, ShoppingList } from '@/types';
-import { ShoppingCart, Trash2, Plus, X, Search } from 'lucide-react';
+import { Trash2, Plus, X, Search, ChevronDown, ChevronUp } from 'lucide-react';
 import MobileLayout from '@/Layouts/MobileLayout';
 import DesktopLayout from '@/Layouts/DesktopLayout';
 
@@ -73,15 +73,6 @@ const ShoppingLists = ({ shoppingLists, ingredients, ingredientCategories }: Sho
         alreadyInRefrigerator: 0,
         customItems: 0
     });
-
-    // 全選択/全解除のトグル
-    const handleToggleAll = () => {
-        if (selectedItems.length === shoppingLists.length) {
-            setSelectedItems([]);
-        } else {
-            setSelectedItems(shoppingLists.map(item => item.id));
-        }
-    };
 
     // 個別の選択/解除のトグル
     const handleToggleItem = (id: number) => {
@@ -291,6 +282,41 @@ const ShoppingLists = ({ shoppingLists, ingredients, ingredientCategories }: Sho
         setTempSelectedIngredients(newSelection);
     };
 
+    // カテゴリの開閉状態（デフォルトで全て開く）
+    const [collapsedCategories, setCollapsedCategories] = useState<Set<string>>(new Set());
+
+    // カテゴリの開閉をトグル
+    const toggleCategory = (categoryName: string) => {
+        const newCollapsed = new Set(collapsedCategories);
+        if (newCollapsed.has(categoryName)) {
+            newCollapsed.delete(categoryName);
+        } else {
+            newCollapsed.add(categoryName);
+        }
+        setCollapsedCategories(newCollapsed);
+    };
+
+    // 買い物リストをカテゴリごとにグループ化
+    const groupedShoppingLists = useMemo(() => {
+        const categoryMap = new Map<string, ShoppingList[]>();
+
+        shoppingLists.forEach(item => {
+            const categoryName = item.custom_item
+                ? '自由入力'
+                : (item.ingredient?.category?.category_name || 'その他');
+
+            if (!categoryMap.has(categoryName)) {
+                categoryMap.set(categoryName, []);
+            }
+            categoryMap.get(categoryName)!.push(item);
+        });
+
+        return Array.from(categoryMap.entries()).map(([categoryName, items]) => ({
+            categoryName,
+            items,
+        }));
+    }, [shoppingLists]);
+
     // カテゴリでフィルタリングされた食材
     const filteredIngredients = ingredients.filter(ing => {
         // カテゴリフィルター
@@ -355,96 +381,68 @@ const ShoppingLists = ({ shoppingLists, ingredients, ingredientCategories }: Sho
                         </button>
                     </div>
                 ) : (
-                    <>
-                        {/* 全選択チェックボックス */}
-                        <div
-                            className="bg-white rounded-lg shadow-sm border p-4 mb-4"
-                            style={{ borderColor: 'var(--gray)' }}
-                        >
-                            <label className="flex items-center gap-2 cursor-pointer">
-                                <input
-                                    type="checkbox"
-                                    className="custom-checkbox w-5 h-5 rounded"
-                                    checked={selectedItems.length === shoppingLists.length && shoppingLists.length > 0}
-                                    onChange={handleToggleAll}
-                                />
-                                <span
-                                    className="font-semibold"
-                                    style={{ color: 'var(--black)' }}
-                                >
-                                    全選択 ({selectedItems.length}/{shoppingLists.length})
-                                </span>
-                            </label>
-                        </div>
+                    // カテゴリ別アコーディオン表示
+                    <div className="space-y-3">
+                        {groupedShoppingLists.map(({ categoryName, items }) => {
+                            const isCollapsed = collapsedCategories.has(categoryName);
+                            return (
+                                <div key={categoryName} className="bg-white rounded-lg shadow-sm border overflow-hidden" style={{ borderColor: 'var(--gray)' }}>
+                                    {/* カテゴリヘッダー（クリックで開閉） */}
+                                    <button
+                                        onClick={() => toggleCategory(categoryName)}
+                                        className="w-full flex items-center justify-between px-4 py-3 font-semibold text-left"
+                                        style={{ color: 'var(--black)', backgroundColor: 'var(--light-gray)' }}
+                                    >
+                                        <span>{categoryName}（{items.length}）</span>
+                                        {isCollapsed
+                                            ? <ChevronDown className="w-5 h-5 flex-shrink-0" style={{ color: 'var(--dark-gray)' }} />
+                                            : <ChevronUp className="w-5 h-5 flex-shrink-0" style={{ color: 'var(--dark-gray)' }} />
+                                        }
+                                    </button>
 
-                        {/* 食材リスト */}
-                        <div className="space-y-2">
-                            {shoppingLists.map((item) => (
-                                <div
-                                    key={item.id}
-                                    className={`bg-white rounded-lg shadow-sm border transition-all ${
-                                        selectedItems.includes(item.id)
-                                            ? 'ring-2 ring-offset-2'
-                                            : ''
-                                    }`}
-                                    style={{
-                                        borderColor: selectedItems.includes(item.id) ? 'var(--main-color)' : 'var(--gray)',
-                                        '--tw-ring-color': 'var(--sub-color)'
-                                    } as React.CSSProperties}
-                                >
-                                    <label className="flex items-center p-4 cursor-pointer">
-                                        <input
-                                            type="checkbox"
-                                            className="custom-checkbox w-5 h-5 rounded flex-shrink-0"
-                                            checked={selectedItems.includes(item.id)}
-                                            onChange={() => handleToggleItem(item.id)}
-                                        />
-                                        <div className="flex-1 ml-3">
-                                            <h3
-                                                className="font-semibold text-base"
-                                                style={{ color: 'var(--black)' }}
-                                            >
-                                                {item.custom_item || item.ingredient?.ingredient_name || '不明な食材'}
-                                            </h3>
-                                            {!item.custom_item && item.ingredient?.category && (
-                                                <p
-                                                    className="text-sm mt-0.5"
-                                                    style={{ color: 'var(--dark-gray)' }}
-                                                >
-                                                    {item.ingredient.category.category_name}
-                                                </p>
-                                            )}
-                                            {item.custom_item && (
-                                                <p
-                                                    className="text-sm mt-0.5"
-                                                    style={{ color: 'var(--dark-gray)' }}
-                                                >
-                                                    自由入力
-                                                </p>
-                                            )}
-                                        </div>
-
-                                        {/* 冷蔵庫で管理できる材料の場合、在庫状態を表示 */}
-                                        {item.ingredients_id && (
-                                            <div className="flex-shrink-0">
-                                                <span
-                                                    className={`px-3 py-1 rounded-full text-xs font-medium ${
-                                                        item.in_refrigerator ? 'text-white' : ''
+                                    {/* アイテムリスト（開いている時のみ表示） */}
+                                    {!isCollapsed && (
+                                        <div className="divide-y" style={{ borderColor: 'var(--gray)' }}>
+                                            {items.map((item) => (
+                                                <label
+                                                    key={item.id}
+                                                    className={`flex items-center p-4 cursor-pointer transition-all ${
+                                                        selectedItems.includes(item.id) ? 'bg-orange-50' : ''
                                                     }`}
-                                                    style={{
-                                                        backgroundColor: item.in_refrigerator ? 'var(--main-color)' : 'var(--light-gray)',
-                                                        color: item.in_refrigerator ? 'white' : 'var(--dark-gray)'
-                                                    }}
                                                 >
-                                                    {item.in_refrigerator ? '在庫あり' : '在庫なし'}
-                                                </span>
-                                            </div>
-                                        )}
-                                    </label>
+                                                    <input
+                                                        type="checkbox"
+                                                        className="custom-checkbox w-5 h-5 rounded flex-shrink-0"
+                                                        checked={selectedItems.includes(item.id)}
+                                                        onChange={() => handleToggleItem(item.id)}
+                                                    />
+                                                    <span
+                                                        className="flex-1 ml-3 font-medium text-base"
+                                                        style={{ color: 'var(--black)' }}
+                                                    >
+                                                        {item.custom_item || item.ingredient?.ingredient_name || '不明な食材'}
+                                                    </span>
+
+                                                    {/* 冷蔵庫で管理できる材料の場合、在庫状態を表示 */}
+                                                    {item.ingredients_id && (
+                                                        <span
+                                                            className="px-3 py-1 rounded-full text-xs font-medium flex-shrink-0"
+                                                            style={{
+                                                                backgroundColor: item.in_refrigerator ? 'var(--main-color)' : 'var(--light-gray)',
+                                                                color: item.in_refrigerator ? 'white' : 'var(--dark-gray)'
+                                                            }}
+                                                        >
+                                                            {item.in_refrigerator ? '在庫あり' : '在庫なし'}
+                                                        </span>
+                                                    )}
+                                                </label>
+                                            ))}
+                                        </div>
+                                    )}
                                 </div>
-                            ))}
-                        </div>
-                    </>
+                            );
+                        })}
+                    </div>
                 )}
             </main>
 
