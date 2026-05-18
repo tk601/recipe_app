@@ -507,14 +507,13 @@ export default function RecipesIndex({ categories, favoriteRecipes, favoritesPag
                                 ))}
                             </div>
                         ) : (
-                            // 検索結果なし
-                            <div className="text-center py-12">
-                                <p
-                                    className="text-sm"
-                                    style={{ color: 'var(--dark-gray)' }}
-                                >
-                                    「{searchQuery}」に一致するレシピが見つかりませんでした
-                                </p>
+                            // 検索結果なし：PC/スマホで異なる画像を表示
+                            <div className="text-center py-8">
+                                <img
+                                    src={isDesktop ? '/images/recipe_not_fund_pc.png' : '/images/recipe_not_fund_sp.png'}
+                                    alt="レシピが見つかりませんでした"
+                                    className="mx-auto max-w-full"
+                                />
                             </div>
                         )}
                     </div>
