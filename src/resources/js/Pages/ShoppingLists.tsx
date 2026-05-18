@@ -35,13 +35,10 @@ const ShoppingLists = ({ shoppingLists, ingredients, ingredientCategories }: Sho
         return () => window.removeEventListener('resize', checkScreenSize);
     }, []);
 
-    // 選択された食材のIDを管理
-    const [selectedItems, setSelectedItems] = useState<number[]>([]);
-
     // 食材選択モーダルの表示状態
     const [showIngredientModal, setShowIngredientModal] = useState(false);
 
-    // 選択中の食材カテゴリ
+    // 選択中の食材カテゴリ（食材追加モーダル内）
     const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
 
     // 一時的に選択された食材ID
@@ -63,83 +60,96 @@ const ShoppingLists = ({ shoppingLists, ingredients, ingredientCategories }: Sho
     const [showSearchSuggestions, setShowSearchSuggestions] = useState(false);
     const searchInputRef = useRef<HTMLDivElement>(null);
 
-    // 削除確認モーダルの表示状態
-    const [showDeleteModal, setShowDeleteModal] = useState(false);
+    // 削除確認モーダル（アイテム単体）
+    const [deleteItemId, setDeleteItemId] = useState<number | null>(null);
 
-    // 冷蔵庫保存確認モーダルの表示状態とメッセージ
-    const [showRefrigeratorModal, setShowRefrigeratorModal] = useState(false);
-    const [refrigeratorModalData, setRefrigeratorModalData] = useState({
-        itemsToSave: 0,
-        alreadyInRefrigerator: 0,
-        customItems: 0
-    });
+    // 購入済みアイテムの一括操作モーダル
+    const [showPurchasedDeleteModal, setShowPurchasedDeleteModal] = useState(false);
+    const [showPurchasedRefrigeratorModal, setShowPurchasedRefrigeratorModal] = useState(false);
 
-    // 個別の選択/解除のトグル
-    const handleToggleItem = (id: number) => {
-        if (selectedItems.includes(id)) {
-            setSelectedItems(selectedItems.filter(itemId => itemId !== id));
+    // カテゴリの開閉状態（デフォルトで全て開く）
+    const [collapsedCategories, setCollapsedCategories] = useState<Set<string>>(new Set());
+
+    // カテゴリの開閉をトグル
+    const toggleCategory = (categoryName: string) => {
+        const newCollapsed = new Set(collapsedCategories);
+        if (newCollapsed.has(categoryName)) {
+            newCollapsed.delete(categoryName);
         } else {
-            setSelectedItems([...selectedItems, id]);
+            newCollapsed.add(categoryName);
         }
+        setCollapsedCategories(newCollapsed);
     };
 
+    // 買い物リストをカテゴリごとにグループ化
+    const groupedShoppingLists = useMemo(() => {
+        const categoryMap = new Map<string, ShoppingList[]>();
 
-    // 選択した食材を削除（モーダルを開く）
-    const handleDelete = () => {
-        if (selectedItems.length === 0) {
-            return;
-        }
-        setShowDeleteModal(true);
+        shoppingLists.forEach(item => {
+            const categoryName = item.custom_item
+                ? '自由入力'
+                : (item.ingredient?.category?.category_name || 'その他');
+
+            if (!categoryMap.has(categoryName)) {
+                categoryMap.set(categoryName, []);
+            }
+            categoryMap.get(categoryName)!.push(item);
+        });
+
+        return Array.from(categoryMap.entries()).map(([categoryName, items]) => ({
+            categoryName,
+            items,
+        }));
+    }, [shoppingLists]);
+
+    // 購入進捗の計算
+    const purchasedCount = shoppingLists.filter(item => item.purchased).length;
+    const totalCount = shoppingLists.length;
+    const progressPercent = totalCount > 0 ? Math.round((purchasedCount / totalCount) * 100) : 0;
+
+    /**
+     * 購入済みフラグをトグル（非同期・画面リロードなし）
+     */
+    const togglePurchased = (id: number) => {
+        router.patch(route('shopping-lists.toggle-purchased', id), {}, {
+            preserveState: true,
+            preserveScroll: true,
+        });
     };
 
-    // 削除を確定
-    const confirmDelete = () => {
+    /**
+     * アイテムを削除（確定）
+     */
+    const confirmDeleteItem = () => {
+        if (deleteItemId === null) return;
         router.delete(route('shopping-lists.destroy'), {
-            data: { ids: selectedItems },
+            data: { ids: [deleteItemId] },
             onSuccess: () => {
-                setSelectedItems([]);
-                setShowDeleteModal(false);
+                setDeleteItemId(null);
             },
         });
     };
 
-    // 選択した食材を冷蔵庫に保存（モーダルを開く）
-    const handleMoveToRefrigerator = () => {
-        if (selectedItems.length === 0) {
-            return;
-        }
-
-        // 選択されたアイテムの情報を取得
-        const selectedItemsData = shoppingLists.filter(item => selectedItems.includes(item.id));
-
-        // 冷蔵庫に保存できるアイテム（ingredients_idがあり、かつ冷蔵庫にないもの）をカウント
-        const itemsToSave = selectedItemsData.filter(item => item.ingredients_id && !item.in_refrigerator);
-
-        // 自由入力アイテムの数
-        const customItemsCount = selectedItemsData.filter(item => item.custom_item).length;
-
-        // 既に冷蔵庫にあるアイテムの数
-        const alreadyInRefrigeratorCount = selectedItemsData.filter(item => item.ingredients_id && item.in_refrigerator).length;
-
-        // モーダルデータを設定
-        setRefrigeratorModalData({
-            itemsToSave: itemsToSave.length,
-            alreadyInRefrigerator: alreadyInRefrigeratorCount,
-            customItems: customItemsCount
+    /**
+     * 購入済みアイテムを一括削除（確定）
+     */
+    const confirmDeletePurchased = () => {
+        const purchasedIds = shoppingLists.filter(item => item.purchased).map(item => item.id);
+        router.delete(route('shopping-lists.destroy'), {
+            data: { ids: purchasedIds },
+            onSuccess: () => setShowPurchasedDeleteModal(false),
         });
-
-        setShowRefrigeratorModal(true);
     };
 
-    // 冷蔵庫保存を確定
-    const confirmMoveToRefrigerator = () => {
+    /**
+     * 購入済みアイテムを一括で冷蔵庫へ保存（確定）
+     */
+    const confirmMovePurchasedToRefrigerator = () => {
+        const purchasedIds = shoppingLists.filter(item => item.purchased).map(item => item.id);
         router.post(route('shopping-lists.move-to-refrigerator'), {
-            ids: selectedItems,
+            ids: purchasedIds,
         }, {
-            onSuccess: () => {
-                setSelectedItems([]);
-                setShowRefrigeratorModal(false);
-            },
+            onSuccess: () => setShowPurchasedRefrigeratorModal(false),
         });
     };
 
@@ -179,10 +189,7 @@ const ShoppingLists = ({ shoppingLists, ingredients, ingredientCategories }: Sho
      * 選択した食材を確定して買い物リストに追加
      */
     const confirmIngredientSelection = () => {
-        // 食材が何も選択されていない場合は何もしない
-        if (tempSelectedIngredients.size === 0) {
-            return;
-        }
+        if (tempSelectedIngredients.size === 0) return;
 
         router.post(route('shopping-lists.store'), {
             ingredient_ids: Array.from(tempSelectedIngredients),
@@ -217,13 +224,11 @@ const ShoppingLists = ({ shoppingLists, ingredients, ingredientCategories }: Sho
     const confirmCustomItem = () => {
         const trimmed = customItem.trim();
 
-        // 空チェック
         if (!trimmed) {
             setCustomItemError('入力してください');
             return;
         }
 
-        // 50文字以内チェック
         if (trimmed.length > 50) {
             setCustomItemError('50文字以内で入力してください');
             return;
@@ -240,14 +245,13 @@ const ShoppingLists = ({ shoppingLists, ingredients, ingredientCategories }: Sho
     };
 
     /**
-     * 検索候補をフィルタリング（検索キーワードのみで絞り込み）
+     * 検索候補をフィルタリング
      */
     const searchSuggestions = useMemo(() => {
         if (!ingredientSearchKeyword.trim()) return [];
-
         return ingredients.filter(ingredient =>
             ingredient.name.toLowerCase().includes(ingredientSearchKeyword.toLowerCase())
-        ).slice(0, 10); // 最大10件まで表示
+        ).slice(0, 10);
     }, [ingredientSearchKeyword, ingredients]);
 
     /**
@@ -256,76 +260,26 @@ const ShoppingLists = ({ shoppingLists, ingredients, ingredientCategories }: Sho
     const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const value = e.target.value;
         setIngredientSearchKeyword(value);
-
-        // 検索候補を表示
-        if (value.trim()) {
-            setShowSearchSuggestions(true);
-        } else {
-            setShowSearchSuggestions(false);
-        }
+        setShowSearchSuggestions(value.trim() !== '');
     };
 
     /**
      * 検索候補から食材を選択
      */
     const handleSelectFromSuggestion = (ingredientId: number, categoryId: number) => {
-        // 検索候補を非表示
         setShowSearchSuggestions(false);
         setIngredientSearchKeyword('');
-
-        // カテゴリを変更
         setSelectedCategoryId(categoryId);
 
-        // 食材を選択状態にする
         const newSelection = new Set(tempSelectedIngredients);
         newSelection.add(ingredientId);
         setTempSelectedIngredients(newSelection);
     };
 
-    // カテゴリの開閉状態（デフォルトで全て開く）
-    const [collapsedCategories, setCollapsedCategories] = useState<Set<string>>(new Set());
-
-    // カテゴリの開閉をトグル
-    const toggleCategory = (categoryName: string) => {
-        const newCollapsed = new Set(collapsedCategories);
-        if (newCollapsed.has(categoryName)) {
-            newCollapsed.delete(categoryName);
-        } else {
-            newCollapsed.add(categoryName);
-        }
-        setCollapsedCategories(newCollapsed);
-    };
-
-    // 買い物リストをカテゴリごとにグループ化
-    const groupedShoppingLists = useMemo(() => {
-        const categoryMap = new Map<string, ShoppingList[]>();
-
-        shoppingLists.forEach(item => {
-            const categoryName = item.custom_item
-                ? '自由入力'
-                : (item.ingredient?.category?.category_name || 'その他');
-
-            if (!categoryMap.has(categoryName)) {
-                categoryMap.set(categoryName, []);
-            }
-            categoryMap.get(categoryName)!.push(item);
-        });
-
-        return Array.from(categoryMap.entries()).map(([categoryName, items]) => ({
-            categoryName,
-            items,
-        }));
-    }, [shoppingLists]);
-
-    // カテゴリでフィルタリングされた食材
-    const filteredIngredients = ingredients.filter(ing => {
-        // カテゴリフィルター
-        const categoryMatch = selectedCategoryId
-            ? ing.ingredient_category_id === selectedCategoryId
-            : true;
-
-        return categoryMatch;
-    });
+    // カテゴリでフィルタリングされた食材（食材追加モーダル内）
+    const filteredIngredients = ingredients.filter(ing =>
+        selectedCategoryId ? ing.ingredient_category_id === selectedCategoryId : true
+    );
 
     /**
      * 検索候補の外側をクリックしたら閉じる
@@ -333,13 +287,7 @@ const ShoppingLists = ({ shoppingLists, ingredients, ingredientCategories }: Sho
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
             const target = event.target as HTMLElement;
-
-            // 検索候補のボタンをクリックした場合は何もしない
-            if (target.closest('[data-suggestion-item]')) {
-                return;
-            }
-
-            // 検索コンテナ外をクリックした場合は候補を閉じる
+            if (target.closest('[data-suggestion-item]')) return;
             if (searchInputRef.current && !searchInputRef.current.contains(target)) {
                 setShowSearchSuggestions(false);
             }
@@ -347,9 +295,7 @@ const ShoppingLists = ({ shoppingLists, ingredients, ingredientCategories }: Sho
 
         if (showIngredientModal) {
             document.addEventListener('mousedown', handleClickOutside);
-            return () => {
-                document.removeEventListener('mousedown', handleClickOutside);
-            };
+            return () => document.removeEventListener('mousedown', handleClickOutside);
         }
     }, [showIngredientModal]);
 
@@ -381,10 +327,55 @@ const ShoppingLists = ({ shoppingLists, ingredients, ingredientCategories }: Sho
                         </button>
                     </div>
                 ) : (
-                    // カテゴリ別アコーディオン表示
                     <div className="space-y-3">
+                        {/* 購入進捗バー */}
+                        <div
+                            className="bg-white rounded-lg shadow-sm border p-4"
+                            style={{ borderColor: 'var(--gray)' }}
+                        >
+                            <div className="flex justify-between items-center mb-2">
+                                <span className="text-sm font-medium" style={{ color: 'var(--dark-gray)' }}>
+                                    購入済み <span className="font-bold" style={{ color: 'var(--main-color)' }}>{purchasedCount}</span> / {totalCount}個
+                                </span>
+                                <span className="text-sm font-bold" style={{ color: 'var(--main-color)' }}>
+                                    {progressPercent}%
+                                </span>
+                            </div>
+                            <div className="w-full rounded-full h-2.5" style={{ backgroundColor: 'var(--light-gray)' }}>
+                                <div
+                                    className="h-2.5 rounded-full transition-all duration-500"
+                                    style={{
+                                        width: `${progressPercent}%`,
+                                        backgroundColor: progressPercent === 100 ? '#22C55E' : 'var(--main-color)',
+                                    }}
+                                />
+                            </div>
+
+                            {/* 購入済みアイテムがある時のみ一括操作ボタンを表示 */}
+                            {purchasedCount > 0 && (
+                                <div className="flex gap-2 mt-3 justify-end">
+                                    <button
+                                        onClick={() => setShowPurchasedRefrigeratorModal(true)}
+                                        className="px-3 py-1.5 rounded-lg text-xs font-bold border transition-all active:scale-95"
+                                        style={{ borderColor: 'var(--main-color)', color: 'var(--main-color)', backgroundColor: 'white' }}
+                                    >
+                                        冷蔵庫へ保存
+                                    </button>
+                                    <button
+                                        onClick={() => setShowPurchasedDeleteModal(true)}
+                                        className="px-3 py-1.5 rounded-lg text-xs font-bold border transition-all active:scale-95"
+                                        style={{ borderColor: '#EF4444', color: '#EF4444', backgroundColor: 'white' }}
+                                    >
+                                        削除
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* カテゴリ別アコーディオン表示 */}
                         {groupedShoppingLists.map(({ categoryName, items }) => {
                             const isCollapsed = collapsedCategories.has(categoryName);
+                            const categoryPurchasedCount = items.filter(item => item.purchased).length;
                             return (
                                 <div key={categoryName} className="bg-white rounded-lg shadow-sm border overflow-hidden" style={{ borderColor: 'var(--gray)' }}>
                                     {/* カテゴリヘッダー（クリックで開閉） */}
@@ -393,7 +384,12 @@ const ShoppingLists = ({ shoppingLists, ingredients, ingredientCategories }: Sho
                                         className="w-full flex items-center justify-between px-4 py-3 font-semibold text-left"
                                         style={{ color: 'var(--black)', backgroundColor: 'var(--light-gray)' }}
                                     >
-                                        <span>{categoryName}（{items.length}）</span>
+                                        <span>
+                                            {categoryName}
+                                            <span className="ml-2 text-xs font-normal" style={{ color: 'var(--dark-gray)' }}>
+                                                {categoryPurchasedCount}/{items.length}
+                                            </span>
+                                        </span>
                                         {isCollapsed
                                             ? <ChevronDown className="w-5 h-5 flex-shrink-0" style={{ color: 'var(--dark-gray)' }} />
                                             : <ChevronUp className="w-5 h-5 flex-shrink-0" style={{ color: 'var(--dark-gray)' }} />
@@ -404,29 +400,34 @@ const ShoppingLists = ({ shoppingLists, ingredients, ingredientCategories }: Sho
                                     {!isCollapsed && (
                                         <div className="divide-y" style={{ borderColor: 'var(--gray)' }}>
                                             {items.map((item) => (
-                                                <label
+                                                <div
                                                     key={item.id}
-                                                    className={`flex items-center p-4 cursor-pointer transition-all ${
-                                                        selectedItems.includes(item.id) ? 'bg-orange-50' : ''
+                                                    className={`flex items-center px-4 py-3 transition-all ${
+                                                        item.purchased ? 'opacity-50' : ''
                                                     }`}
                                                 >
-                                                    <input
-                                                        type="checkbox"
-                                                        className="custom-checkbox w-5 h-5 rounded flex-shrink-0"
-                                                        checked={selectedItems.includes(item.id)}
-                                                        onChange={() => handleToggleItem(item.id)}
-                                                    />
-                                                    <span
-                                                        className="flex-1 ml-3 font-medium text-base"
-                                                        style={{ color: 'var(--black)' }}
-                                                    >
-                                                        {item.custom_item || item.ingredient?.ingredient_name || '不明な食材'}
-                                                    </span>
+                                                    {/* 購入チェックボックス */}
+                                                    <label className="flex items-center flex-1 gap-3 cursor-pointer min-w-0">
+                                                        <input
+                                                            type="checkbox"
+                                                            className="custom-checkbox w-5 h-5 rounded flex-shrink-0"
+                                                            checked={item.purchased}
+                                                            onChange={() => togglePurchased(item.id)}
+                                                        />
+                                                        <span
+                                                            className={`font-medium text-base truncate ${
+                                                                item.purchased ? 'line-through' : ''
+                                                            }`}
+                                                            style={{ color: 'var(--black)' }}
+                                                        >
+                                                            {item.custom_item || item.ingredient?.ingredient_name || '不明な食材'}
+                                                        </span>
+                                                    </label>
 
-                                                    {/* 冷蔵庫で管理できる材料の場合、在庫状態を表示 */}
+                                                    {/* 在庫状態バッジ */}
                                                     {item.ingredients_id && (
                                                         <span
-                                                            className="px-3 py-1 rounded-full text-xs font-medium flex-shrink-0"
+                                                            className="px-2 py-1 rounded-full text-xs font-medium flex-shrink-0 mr-2"
                                                             style={{
                                                                 backgroundColor: item.in_refrigerator ? 'var(--main-color)' : 'var(--light-gray)',
                                                                 color: item.in_refrigerator ? 'white' : 'var(--dark-gray)'
@@ -435,7 +436,16 @@ const ShoppingLists = ({ shoppingLists, ingredients, ingredientCategories }: Sho
                                                             {item.in_refrigerator ? '在庫あり' : '在庫なし'}
                                                         </span>
                                                     )}
-                                                </label>
+
+                                                    {/* 削除ボタン */}
+                                                    <button
+                                                        onClick={() => setDeleteItemId(item.id)}
+                                                        className="flex-shrink-0 p-1.5 rounded-lg transition-all active:scale-95"
+                                                        style={{ color: 'var(--dark-gray)' }}
+                                                    >
+                                                        <Trash2 className="w-4 h-4" />
+                                                    </button>
+                                                </div>
                                             ))}
                                         </div>
                                     )}
@@ -446,57 +456,16 @@ const ShoppingLists = ({ shoppingLists, ingredients, ingredientCategories }: Sho
                 )}
             </main>
 
-            {/* 材料追加フローティングボタン（アイテムがある時のみ表示） */}
-            {shoppingLists.length > 0 && selectedItems.length === 0 && (
+            {/* 材料追加フローティングボタン（アイテムがある時 かつ モバイルのみ表示） */}
+            {shoppingLists.length > 0 && !isDesktop && (
                 <button
                     onClick={openIngredientModal}
                     className="fixed bottom-24 md:bottom-20 right-4 md:right-16 px-4 py-3 rounded-full shadow-lg flex items-center gap-2 transition-all duration-200 hover:shadow-xl active:scale-95 z-20"
-                    style={{
-                        backgroundColor: 'var(--main-color)',
-                    }}
+                    style={{ backgroundColor: 'var(--main-color)' }}
                 >
-                    <span className="text-white font-bold text-sm">買い物リスト作成</span>
+                    <span className="text-white font-bold text-sm">追加</span>
                     <Plus className="w-4 h-4 text-white" />
                 </button>
-            )}
-
-            {/* 選択時のアクションボタン */}
-            {selectedItems.length > 0 && (
-                <div
-                    className="fixed left-0 right-0 p-4 shadow-lg"
-                    style={{
-                        bottom: '72px', // フッターの高さ分上に配置
-                        backgroundColor: 'var(--white)',
-                        borderTop: '1px solid var(--gray)'
-                    }}
-                >
-                    <div className="max-w-7xl mx-auto flex gap-2">
-                        {/* 削除ボタン */}
-                        <button
-                            onClick={handleDelete}
-                            className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg text-sm font-medium transition-all active:scale-95"
-                            style={{
-                                backgroundColor: '#EF4444',
-                                color: 'white'
-                            }}
-                        >
-                            <Trash2 className="w-5 h-5" />
-                            削除 ({selectedItems.length})
-                        </button>
-
-                        {/* 冷蔵庫に保存ボタン */}
-                        <button
-                            onClick={handleMoveToRefrigerator}
-                            className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg text-sm font-medium transition-all active:scale-95"
-                            style={{
-                                backgroundColor: 'var(--main-color)',
-                                color: 'white'
-                            }}
-                        >
-                            冷蔵庫に保存 ({selectedItems.length})
-                        </button>
-                    </div>
-                </div>
             )}
 
             {/* 材料選択モーダル */}
@@ -511,9 +480,8 @@ const ShoppingLists = ({ shoppingLists, ingredients, ingredientCategories }: Sho
                             </button>
                         </div>
 
-                        {/* 検索ボックスと自由入力欄 */}
+                        {/* 検索ボックス */}
                         <div className="p-4 border-b space-y-3" style={{ borderColor: 'var(--gray)' }}>
-                            {/* 食材検索 */}
                             <div className="relative" ref={searchInputRef}>
                                 <Search
                                     className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5"
@@ -531,62 +499,53 @@ const ShoppingLists = ({ shoppingLists, ingredients, ingredientCategories }: Sho
                                     } as React.CSSProperties}
                                 />
                             </div>
-
                         </div>
 
-                            {/* 検索候補のドロップダウン */}
-                            {showSearchSuggestions && searchSuggestions.length > 0 && searchInputRef.current && createPortal(
-                                <div
-                                    className="fixed bg-white border rounded-lg shadow-lg max-h-64 overflow-y-auto"
-                                    style={{
-                                        borderColor: 'var(--gray)',
-                                        top: searchInputRef.current.getBoundingClientRect().bottom + 4,
-                                        left: searchInputRef.current.getBoundingClientRect().left,
-                                        width: searchInputRef.current.offsetWidth,
-                                        zIndex: 10001,
-                                    }}
-                                >
-                                    {searchSuggestions.map((ingredient) => {
-                                        const category = ingredientCategories.find(cat => cat.id === ingredient.ingredient_category_id);
-                                        return (
-                                            <button
-                                                key={ingredient.id}
-                                                data-suggestion-item
-                                                onClick={() => handleSelectFromSuggestion(ingredient.id, ingredient.ingredient_category_id)}
-                                                className="w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center justify-between border-b last:border-b-0"
-                                                style={{ borderColor: 'var(--gray)' }}
+                        {/* 検索候補のドロップダウン */}
+                        {showSearchSuggestions && searchSuggestions.length > 0 && searchInputRef.current && createPortal(
+                            <div
+                                className="fixed bg-white border rounded-lg shadow-lg max-h-64 overflow-y-auto"
+                                style={{
+                                    borderColor: 'var(--gray)',
+                                    top: searchInputRef.current.getBoundingClientRect().bottom + 4,
+                                    left: searchInputRef.current.getBoundingClientRect().left,
+                                    width: searchInputRef.current.offsetWidth,
+                                    zIndex: 10001,
+                                }}
+                            >
+                                {searchSuggestions.map((ingredient) => {
+                                    const category = ingredientCategories.find(cat => cat.id === ingredient.ingredient_category_id);
+                                    return (
+                                        <button
+                                            key={ingredient.id}
+                                            data-suggestion-item
+                                            onClick={() => handleSelectFromSuggestion(ingredient.id, ingredient.ingredient_category_id)}
+                                            className="w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center justify-between border-b last:border-b-0"
+                                            style={{ borderColor: 'var(--gray)' }}
+                                        >
+                                            <div className="flex-1">
+                                                <div className="font-medium" style={{ color: 'var(--black)' }}>
+                                                    {ingredient.name}
+                                                </div>
+                                                <div className="text-xs mt-0.5" style={{ color: 'var(--dark-gray)' }}>
+                                                    {category?.name}
+                                                </div>
+                                            </div>
+                                            <div
+                                                className="px-2 py-1 rounded text-xs"
+                                                style={{
+                                                    backgroundColor: tempSelectedIngredients.has(ingredient.id) ? 'var(--main-color)' : 'var(--light-gray)',
+                                                    color: tempSelectedIngredients.has(ingredient.id) ? 'white' : 'var(--dark-gray)'
+                                                }}
                                             >
-                                                <div className="flex-1">
-                                                    <div
-                                                        className="font-medium"
-                                                        style={{ color: 'var(--black)' }}
-                                                    >
-                                                        {ingredient.name}
-                                                    </div>
-                                                    <div
-                                                        className="text-xs mt-0.5"
-                                                        style={{ color: 'var(--dark-gray)' }}
-                                                    >
-                                                        {category?.name}
-                                                    </div>
-                                                </div>
-                                                <div
-                                                    className={`px-2 py-1 rounded text-xs ${
-                                                        tempSelectedIngredients.has(ingredient.id) ? 'text-white' : ''
-                                                    }`}
-                                                    style={{
-                                                        backgroundColor: tempSelectedIngredients.has(ingredient.id) ? 'var(--main-color)' : 'var(--light-gray)',
-                                                        color: tempSelectedIngredients.has(ingredient.id) ? 'white' : 'var(--dark-gray)'
-                                                    }}
-                                                >
-                                                    {tempSelectedIngredients.has(ingredient.id) ? '選択中' : '未選択'}
-                                                </div>
-                                            </button>
-                                        );
-                                    })}
-                                </div>,
-                                document.body
-                            )}
+                                                {tempSelectedIngredients.has(ingredient.id) ? '選択中' : '未選択'}
+                                            </div>
+                                        </button>
+                                    );
+                                })}
+                            </div>,
+                            document.body
+                        )}
 
                         {/* カテゴリタブ */}
                         <div className="flex overflow-x-auto p-2 border-b" style={{ borderColor: 'var(--gray)' }}>
@@ -684,7 +643,6 @@ const ShoppingLists = ({ shoppingLists, ingredients, ingredientCategories }: Sho
                                 } as React.CSSProperties}
                                 autoFocus
                             />
-                            {/* 文字数カウントとエラーメッセージ */}
                             <div className="flex justify-between items-center mt-1">
                                 {customItemError ? (
                                     <p className="text-xs" style={{ color: '#EF4444' }}>{customItemError}</p>
@@ -716,26 +674,26 @@ const ShoppingLists = ({ shoppingLists, ingredients, ingredientCategories }: Sho
                 </div>
             )}
 
-            {/* 削除確認モーダル */}
-            {showDeleteModal && (
+            {/* 購入済み一括削除確認モーダル */}
+            {showPurchasedDeleteModal && (
                 <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
                     <div className="bg-white rounded-2xl p-6 max-w-sm w-full">
                         <h3 className="font-bold text-lg mb-4" style={{ color: 'var(--black)' }}>
-                            削除の確認
+                            購入済みを削除
                         </h3>
                         <p className="text-sm mb-6" style={{ color: 'var(--dark-gray)' }}>
-                            選択した{selectedItems.length}個のアイテムを買い物リストから削除しますか？
+                            購入済みの{purchasedCount}個のアイテムを買い物リストから削除しますか？
                         </p>
                         <div className="space-y-2">
                             <button
-                                onClick={confirmDelete}
+                                onClick={confirmDeletePurchased}
                                 className="w-full py-3 rounded-lg font-bold text-white"
                                 style={{ backgroundColor: '#EF4444' }}
                             >
                                 削除する
                             </button>
                             <button
-                                onClick={() => setShowDeleteModal(false)}
+                                onClick={() => setShowPurchasedDeleteModal(false)}
                                 className="w-full py-3 rounded-lg font-bold"
                                 style={{ backgroundColor: 'var(--light-gray)', color: 'var(--dark-gray)' }}
                             >
@@ -746,43 +704,58 @@ const ShoppingLists = ({ shoppingLists, ingredients, ingredientCategories }: Sho
                 </div>
             )}
 
-            {/* 冷蔵庫保存確認モーダル */}
-            {showRefrigeratorModal && (
+            {/* 購入済み一括冷蔵庫保存確認モーダル */}
+            {showPurchasedRefrigeratorModal && (
                 <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
                     <div className="bg-white rounded-2xl p-6 max-w-sm w-full">
                         <h3 className="font-bold text-lg mb-4" style={{ color: 'var(--black)' }}>
-                            冷蔵庫に保存しますか？
+                            冷蔵庫へ保存
                         </h3>
-                        <div className="text-sm mb-6 space-y-2" style={{ color: 'var(--dark-gray)' }}>
-                            {refrigeratorModalData.itemsToSave > 0 && (
-                                <p>
-                                    <span className="font-medium" style={{ color: 'var(--main-color)' }}>
-                                        在庫なし {refrigeratorModalData.itemsToSave}個
-                                    </span>
-                                    を冷蔵庫に保存します
-                                </p>
-                            )}
-                            {refrigeratorModalData.alreadyInRefrigerator > 0 && (
-                                <p className="text-xs">
-                                    （{refrigeratorModalData.alreadyInRefrigerator}個は既に冷蔵庫にあります）
-                                </p>
-                            )}
-                            {refrigeratorModalData.customItems > 0 && (
-                                <p className="text-xs">
-                                    （自由入力の{refrigeratorModalData.customItems}個は冷蔵庫に保存できません）
-                                </p>
-                            )}
-                        </div>
+                        <p className="text-sm mb-6" style={{ color: 'var(--dark-gray)' }}>
+                            購入済みの{purchasedCount}個のアイテムを冷蔵庫に保存しますか？
+                            <br />
+                            <span className="text-xs">※自由入力のアイテムは保存されません</span>
+                        </p>
                         <div className="space-y-2">
                             <button
-                                onClick={confirmMoveToRefrigerator}
+                                onClick={confirmMovePurchasedToRefrigerator}
                                 className="w-full py-3 rounded-lg font-bold text-white"
                                 style={{ backgroundColor: 'var(--main-color)' }}
                             >
                                 保存する
                             </button>
                             <button
-                                onClick={() => setShowRefrigeratorModal(false)}
+                                onClick={() => setShowPurchasedRefrigeratorModal(false)}
+                                className="w-full py-3 rounded-lg font-bold"
+                                style={{ backgroundColor: 'var(--light-gray)', color: 'var(--dark-gray)' }}
+                            >
+                                キャンセル
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* 削除確認モーダル（アイテム単体） */}
+            {deleteItemId !== null && (
+                <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+                    <div className="bg-white rounded-2xl p-6 max-w-sm w-full">
+                        <h3 className="font-bold text-lg mb-4" style={{ color: 'var(--black)' }}>
+                            削除の確認
+                        </h3>
+                        <p className="text-sm mb-6" style={{ color: 'var(--dark-gray)' }}>
+                            このアイテムを買い物リストから削除しますか？
+                        </p>
+                        <div className="space-y-2">
+                            <button
+                                onClick={confirmDeleteItem}
+                                className="w-full py-3 rounded-lg font-bold text-white"
+                                style={{ backgroundColor: '#EF4444' }}
+                            >
+                                削除する
+                            </button>
+                            <button
+                                onClick={() => setDeleteItemId(null)}
                                 className="w-full py-3 rounded-lg font-bold"
                                 style={{ backgroundColor: 'var(--light-gray)', color: 'var(--dark-gray)' }}
                             >
@@ -798,7 +771,7 @@ const ShoppingLists = ({ shoppingLists, ingredients, ingredientCategories }: Sho
 
     // PC時はDesktopLayout（検索なし・作成ボタンあり）、モバイル時はMobileLayout
     return isDesktop ? (
-        <DesktopLayout currentPage="shoppingLists">
+        <DesktopLayout currentPage="shoppingLists" onCreateClick={openIngredientModal}>
             {pageContent}
         </DesktopLayout>
     ) : (

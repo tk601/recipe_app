@@ -16,6 +16,7 @@ class ShoppingList extends Model
     protected $fillable = [
         'ingredients_id',
         'custom_item',
+        'purchased',
         'user_id',
         'created_at'
     ];

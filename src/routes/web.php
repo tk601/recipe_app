@@ -71,6 +71,8 @@ Route::middleware('auth')->group(function () {
     Route::delete('/shopping-lists', [ShoppingListController::class, 'destroy'])->name('shopping-lists.destroy');
     Route::post('/shopping-lists/move-to-refrigerator', [ShoppingListController::class, 'moveToRefrigerator'])
         ->name('shopping-lists.move-to-refrigerator');
+    Route::patch('/shopping-lists/{shoppingList}/toggle-purchased', [ShoppingListController::class, 'togglePurchased'])
+        ->name('shopping-lists.toggle-purchased');
 
 });
 require __DIR__.'/auth.php';

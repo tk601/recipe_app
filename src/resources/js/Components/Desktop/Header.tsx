@@ -42,7 +42,7 @@ const getPageConfig = (page?: PageType) => {
                 showSearch: false,
                 searchPlaceholder: undefined,
                 showCreate: true,
-                createLabel: '材料作成',
+                createLabel: '買い物リスト作成',
                 createHref: undefined,
             };
         default:
@@ -149,7 +149,7 @@ const DesktopHeader = ({
                             </Link>
                         </div>
 
-                        {/* 中央: 検索ボックス + 作成ボタン（検索ボックスのすぐ右に配置） */}
+                        {/* 中央: 検索ボックス */}
                         <div className="flex-1 flex items-center gap-2">
                             {config.showSearch && (
                                 <form
@@ -177,24 +177,25 @@ const DesktopHeader = ({
                                     </div>
                                 </form>
                             )}
+                        </div>
 
-                            {/* 作成ボタン（検索ボックスのすぐ右） */}
+                        {/* 右: 作成ボタン + ナビゲーションリンク */}
+                        <div className="flex items-center gap-1 flex-shrink-0">
+                            {/* 作成ボタン（ナビリンクの左側） */}
                             {config.showCreate && (
                                 config.createHref ? (
-                                    /* hrefがある場合はLinkコンポーネントで遷移 */
                                     <Link
                                         href={config.createHref}
-                                        className="flex items-center gap-2 px-4 py-2 rounded-lg text-white text-sm font-medium hover:opacity-90 transition-opacity flex-shrink-0"
+                                        className="flex items-center gap-2 px-4 py-2 rounded-lg text-white text-sm font-medium hover:opacity-90 transition-opacity mr-2"
                                         style={{ backgroundColor: 'var(--main-color)' }}
                                     >
                                         <Plus className="w-4 h-4" />
                                         {config.createLabel}
                                     </Link>
                                 ) : (
-                                    /* hrefがない場合はonCreateClickコールバックを使用 */
                                     <button
                                         onClick={onCreateClick}
-                                        className="flex items-center gap-2 px-4 py-2 rounded-lg text-white text-sm font-medium hover:opacity-90 transition-opacity flex-shrink-0"
+                                        className="flex items-center gap-2 px-4 py-2 rounded-lg text-white text-sm font-medium hover:opacity-90 transition-opacity mr-2"
                                         style={{ backgroundColor: 'var(--main-color)' }}
                                     >
                                         <Plus className="w-4 h-4" />
@@ -202,10 +203,8 @@ const DesktopHeader = ({
                                     </button>
                                 )
                             )}
-                        </div>
 
-                        {/* 右: ナビゲーションリンク（現在表示中のページは非表示） */}
-                        <div className="flex items-center gap-1 flex-shrink-0">
+                            {/* ナビゲーションリンク（現在表示中のページは非表示） */}
                             {navLinks
                                 .filter((link) => link.page !== currentPage)
                                 .map((link) => {

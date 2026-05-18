@@ -25,6 +25,7 @@ export interface ShoppingList {
     created_at: string;
     ingredient?: Ingredient;
     in_refrigerator: boolean;
+    purchased: boolean;
 }
 
 export type PageProps<

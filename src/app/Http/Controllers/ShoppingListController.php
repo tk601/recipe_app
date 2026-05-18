@@ -51,6 +51,8 @@ class ShoppingListController extends Controller
                 ] : null,
                 // 冷蔵庫に在庫があるかどうか
                 'in_refrigerator' => $item->ingredients_id ? in_array($item->ingredients_id, $refrigeratorIngredientIds) : false,
+                // 購入済みフラグ
+                'purchased' => (bool) $item->purchased,
             ]),
             'ingredients' => $ingredients->map(fn($ing) => [
                 'id' => $ing->id,
@@ -118,6 +120,22 @@ class ShoppingListController extends Controller
         }
 
         return back()->with('success', $message);
+    }
+
+    /**
+     * 購入済みフラグをトグル
+     */
+    public function togglePurchased(Request $request, ShoppingList $shoppingList)
+    {
+        // 自分のアイテムのみ操作可能
+        if ($shoppingList->user_id !== $request->user()->id) {
+            abort(403);
+        }
+
+        $shoppingList->purchased = !$shoppingList->purchased;
+        $shoppingList->save();
+
+        return back();
     }
 
     /**
