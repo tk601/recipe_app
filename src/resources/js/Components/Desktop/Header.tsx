@@ -204,26 +204,29 @@ const DesktopHeader = ({
                                 )
                             )}
 
-                            {/* ナビゲーションリンク（現在表示中のページは非表示） */}
-                            {navLinks
-                                .filter((link) => link.page !== currentPage)
-                                .map((link) => {
-                                    const Icon = link.icon;
-                                    return (
-                                        <Link
-                                            key={link.page}
-                                            href={link.href}
-                                            className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium hover:bg-gray-100 transition-colors"
-                                            style={{ color: 'var(--black)' }}
-                                        >
-                                            <Icon
-                                                className="w-4 h-4"
-                                                style={{ color: 'var(--dark-gray)' }}
-                                            />
-                                            {link.label}
-                                        </Link>
-                                    );
-                                })}
+                            {/* ナビゲーションリンク（全ページ表示・現在のページはアクティブスタイル） */}
+                            {navLinks.map((link) => {
+                                const Icon = link.icon;
+                                const isActive = link.page === currentPage;
+                                return (
+                                    <Link
+                                        key={link.page}
+                                        href={link.href}
+                                        className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors"
+                                        style={{
+                                            backgroundColor: isActive ? 'var(--base-color)' : 'transparent',
+                                            color: isActive ? 'var(--main-color)' : 'var(--black)',
+                                            borderBottom: isActive ? '2px solid var(--main-color)' : '2px solid transparent',
+                                        }}
+                                    >
+                                        <Icon
+                                            className="w-4 h-4"
+                                            style={{ color: isActive ? 'var(--main-color)' : 'var(--dark-gray)' }}
+                                        />
+                                        {link.label}
+                                    </Link>
+                                );
+                            })}
                         </div>
 
                     </div>
