@@ -67,6 +67,21 @@ export default function IngredientsIndex({ categories, ingredients, allIngredien
     // 各カテゴリボタンのrefマップ
     const categoryButtonRefs = useRef<Map<number, HTMLButtonElement>>(new Map());
 
+    // 検索ボックスのDOM参照と高さ（スペーサー・カテゴリbarのtop計算用）
+    const searchBoxRef = useRef<HTMLDivElement>(null);
+    const [searchBoxHeight, setSearchBoxHeight] = useState(48);
+    // カテゴリバーのDOM参照と高さ（スペーサー用）
+    const categoryBarRef = useRef<HTMLDivElement>(null);
+    const [categoryBarHeight, setCategoryBarHeight] = useState(50);
+
+    // 実際のDOM高さを計測してスペーサーに反映（モバイルのみ）
+    useEffect(() => {
+        if (!isDesktop) {
+            if (searchBoxRef.current) setSearchBoxHeight(searchBoxRef.current.offsetHeight);
+            if (categoryBarRef.current) setCategoryBarHeight(categoryBarRef.current.offsetHeight);
+        }
+    }, [isDesktop]);
+
     // activeCategoryが変わったら選択中カテゴリを中央にスクロール
     useEffect(() => {
         const container = categoryScrollRef.current;
@@ -230,10 +245,14 @@ export default function IngredientsIndex({ categories, ingredients, allIngredien
             <Head title="食材管理 - ごはんどき" />
 
             {/* 検索ボックス + フィルターボタン（モバイル時のみ表示。PC時はDesktopHeaderに表示） */}
+            {/* fixed にしてアドレスバー高さ変化による1pxずれを防止 */}
             {!isDesktop && (
+            <>
+            <div style={{ height: searchBoxHeight }} />
             <div
-                className="bg-white border-b sticky top-[49px] z-10 px-4 py-3"
-                style={{ borderColor: 'var(--gray)' }}
+                ref={searchBoxRef}
+                className="bg-white border-b fixed left-0 right-0 z-10 px-4 py-3"
+                style={{ top: `${56 + categoryBarHeight}px`, borderColor: 'var(--gray)' }}
             >
                 <div className="max-w-7xl mx-auto">
                     <div className="flex items-center gap-2">
@@ -270,6 +289,7 @@ export default function IngredientsIndex({ categories, ingredients, allIngredien
                     </div>
                 </div>
             </div>
+            </>
             )}
 
             {/* 在庫フィルター選択ボトムシート（モバイル） */}
@@ -391,9 +411,18 @@ export default function IngredientsIndex({ categories, ingredients, allIngredien
             )}
 
             {/* カテゴリ一覧（横スクロール） */}
+            {/* モバイル: fixed でずれ防止、PC: sticky のまま */}
+            {!isDesktop && <div style={{ height: categoryBarHeight }} />}
             <div
-                className="bg-white border-b sticky top-[97px] z-10"
-                style={{ borderColor: 'var(--gray)' }}
+                ref={categoryBarRef}
+                className="bg-white border-b z-10"
+                style={{
+                    borderColor: 'var(--gray)',
+                    ...(isDesktop
+                        ? { position: 'sticky', top: '97px' }
+                        : { position: 'fixed', left: 0, right: 0, top: '56px' }
+                    )
+                }}
             >
                 <div className="max-w-7xl mx-auto px-4">
                     <div className="flex space-x-2 py-3 overflow-x-auto scrollbar-hide" ref={categoryScrollRef}>

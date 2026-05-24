@@ -78,6 +78,10 @@ export default function CategoryRecipes({ category, recipes }: Props) {
     const lastScrollYRef = useRef(0);
     // 蓄積スクロール量（点滅防止のためにしきい値を超えた時だけ状態変更）
     const scrollDeltaRef = useRef(0);
+    // スマホ用サブヘッダーのDOM参照（高さ計測用）
+    const mobileSubHeaderRef = useRef<HTMLDivElement>(null);
+    // スマホ用サブヘッダーの高さ（スペーサーに使用）
+    const [mobileSubHeaderHeight, setMobileSubHeaderHeight] = useState(0);
 
     useEffect(() => {
         // 初回レンダリング時に画面サイズをチェック
@@ -88,6 +92,13 @@ export default function CategoryRecipes({ category, recipes }: Props) {
         window.addEventListener('resize', checkScreenSize);
         return () => window.removeEventListener('resize', checkScreenSize);
     }, []);
+
+    // スマホ用サブヘッダーの実際の高さを計測してスペーサーに反映
+    useEffect(() => {
+        if (!isDesktop && mobileSubHeaderRef.current) {
+            setMobileSubHeaderHeight(mobileSubHeaderRef.current.offsetHeight);
+        }
+    }, [isDesktop]);
 
     // スクロール方向を検知してサブヘッダー・検索ボックスの表示を制御する
     useEffect(() => {
@@ -296,8 +307,11 @@ export default function CategoryRecipes({ category, recipes }: Props) {
             </div>
 
             {/* ===== スマホ用サブヘッダー（戻るボタン＋カテゴリ名のみ） ===== */}
+            {/* fixed にしてアドレスバー高さ変化による1pxずれを防止 */}
+            <div style={{ height: mobileSubHeaderHeight }} className="md:hidden" />
             <div
-                className="md:hidden sticky top-14 z-20 bg-white border-b"
+                ref={mobileSubHeaderRef}
+                className="md:hidden fixed left-0 right-0 top-14 z-20 bg-white border-b"
                 style={{ borderColor: 'var(--gray)' }}
             >
                 <div className="max-w-7xl mx-auto px-4">

@@ -131,6 +131,10 @@ export default function RecipesIndex({ categories, favoriteRecipes, favoritesPag
     const [isSearching, setIsSearching] = useState(false);
     // デバウンス用タイマー
     const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    // 検索ボックスのDOM参照（高さ計測用）
+    const searchBoxRef = useRef<HTMLDivElement>(null);
+    // 検索ボックスの高さ（スペーサーに使用）
+    const [searchBoxHeight, setSearchBoxHeight] = useState(0);
 
     // 蓄積したお気に入りレシピ（無限スクロールで追加していく）
     const [allFavoriteRecipes, setAllFavoriteRecipes] = useState<Recipe[]>(favoriteRecipes);
@@ -267,6 +271,13 @@ export default function RecipesIndex({ categories, favoriteRecipes, favoritesPag
         return () => window.removeEventListener('resize', checkScreenSize);
     }, []);
 
+    // 検索ボックスの実際の高さを計測してスペーサーに反映
+    useEffect(() => {
+        if (!isDesktop && searchBoxRef.current) {
+            setSearchBoxHeight(searchBoxRef.current.offsetHeight);
+        }
+    }, [isDesktop]);
+
     /**
      * 表示するカテゴリを決定（スマホ: 6個、PC: 8個まで、もっと見るで全て表示）
      */
@@ -371,40 +382,48 @@ export default function RecipesIndex({ categories, favoriteRecipes, favoritesPag
             )}
 
             {/* 検索ボックス（モバイル時のみ表示。PC時はDesktopHeaderに表示） */}
-            {!isDesktop && <div
-                className="sticky top-14 z-20 bg-white border-b px-4 py-3"
-                style={{ borderColor: 'var(--gray)' }}
-            >
-                <div className="max-w-7xl mx-auto">
-                    <div className="relative">
-                        {/* 検索アイコン */}
-                        <div
-                            className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none"
-                            style={{ color: 'var(--dark-gray)' }}
-                        >
-                            <Search className="w-4 h-4" />
+            {/* fixed にしてアドレスバー高さ変化による1pxずれを防止 */}
+            {!isDesktop && (
+                <>
+                    {/* fixed要素の高さ分を確保するスペーサー */}
+                    <div style={{ height: searchBoxHeight }} />
+                    <div
+                        ref={searchBoxRef}
+                        className="fixed left-0 right-0 top-14 z-20 bg-white border-b px-4 pt-[13px] pb-3"
+                        style={{ borderColor: 'var(--gray)' }}
+                    >
+                        <div className="max-w-7xl mx-auto">
+                            <div className="relative">
+                                {/* 検索アイコン */}
+                                <div
+                                    className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none"
+                                    style={{ color: 'var(--dark-gray)' }}
+                                >
+                                    <Search className="w-4 h-4" />
+                                </div>
+                                <input
+                                    type="text"
+                                    placeholder="レシピ名・食材名で検索"
+                                    value={searchQuery}
+                                    onChange={handleSearch}
+                                    className="w-full pl-9 pr-9 py-2 rounded-lg border"
+                                    style={{ borderColor: 'var(--gray)' }}
+                                />
+                                {/* クリアボタン（入力中のみ表示） */}
+                                {searchQuery && (
+                                    <button
+                                        onClick={clearSearch}
+                                        className="absolute right-3 top-1/2 -translate-y-1/2"
+                                        style={{ color: 'var(--dark-gray)' }}
+                                    >
+                                        <X className="w-4 h-4" />
+                                    </button>
+                                )}
+                            </div>
                         </div>
-                        <input
-                            type="text"
-                            placeholder="レシピ名・食材名で検索"
-                            value={searchQuery}
-                            onChange={handleSearch}
-                            className="w-full pl-9 pr-9 py-2 rounded-lg border"
-                            style={{ borderColor: 'var(--gray)' }}
-                        />
-                        {/* クリアボタン（入力中のみ表示） */}
-                        {searchQuery && (
-                            <button
-                                onClick={clearSearch}
-                                className="absolute right-3 top-1/2 -translate-y-1/2"
-                                style={{ color: 'var(--dark-gray)' }}
-                            >
-                                <X className="w-4 h-4" />
-                            </button>
-                        )}
                     </div>
-                </div>
-            </div>}
+                </>
+            )}
 
             {/* メインコンテンツ：検索中は検索結果、それ以外はカテゴリ＋お気に入り */}
             <main className="max-w-7xl mx-auto px-4 py-4">
