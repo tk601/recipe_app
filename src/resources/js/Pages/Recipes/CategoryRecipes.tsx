@@ -503,10 +503,13 @@ export default function CategoryRecipes({ category, recipes }: Props) {
                 {/* レシピ作成ボタン（浮動）※PC画面・フィルターポップアップ表示中は非表示 */}
                 <button
                     onClick={() => router.visit(route('recipes.create'))}
-                    className={`md:hidden fixed bottom-24 right-4 px-4 py-3 rounded-full shadow-lg flex items-center gap-2 transition-all duration-200 hover:shadow-xl active:scale-95 z-20 ${
+                    className={`md:hidden fixed bottom-24 right-4 px-4 py-3 rounded-full flex items-center gap-2 transition-all duration-200 active:scale-95 z-20 border-2 border-white ${
                         isFilterOpen ? 'hidden' : ''
                     }`}
-                    style={{ backgroundColor: 'var(--main-color)' }}
+                    style={{
+                        backgroundColor: 'var(--main-color)',
+                        boxShadow: '0 4px 20px rgba(0,0,0,0.4)',
+                    }}
                 >
                     <span className="text-white font-bold text-sm">レシピ作成</span>
                     <Plus className="w-4 h-4 text-white" />

@@ -460,8 +460,8 @@ const ShoppingLists = ({ shoppingLists, ingredients, ingredientCategories }: Sho
             {shoppingLists.length > 0 && !isDesktop && (
                 <button
                     onClick={openIngredientModal}
-                    className="fixed bottom-24 md:bottom-20 right-4 md:right-16 px-4 py-3 rounded-full shadow-lg flex items-center gap-2 transition-all duration-200 hover:shadow-xl active:scale-95 z-20"
-                    style={{ backgroundColor: 'var(--main-color)' }}
+                    className="fixed bottom-24 md:bottom-20 right-4 md:right-16 px-4 py-3 rounded-full flex items-center gap-2 transition-all duration-200 active:scale-95 z-20 border-2 border-white"
+                    style={{ backgroundColor: 'var(--main-color)', boxShadow: '0 4px 20px rgba(0,0,0,0.4)' }}
                 >
                     <span className="text-white font-bold text-sm">追加</span>
                     <Plus className="w-4 h-4 text-white" />
