@@ -96,6 +96,14 @@ export default function CategoryRecipes({ category, recipes }: Props) {
             const delta = currentScrollY - lastScrollYRef.current;
             lastScrollYRef.current = currentScrollY;
 
+            // ② スクロール可能量が少ない場合は常に表示（コンテンツが少ないページ向け）
+            const scrollableHeight = document.documentElement.scrollHeight - window.innerHeight;
+            if (scrollableHeight < 150) {
+                scrollDeltaRef.current = 0;
+                setIsSubHeaderVisible(true);
+                return;
+            }
+
             // ページ上部付近は常に表示
             if (currentScrollY <= 60) {
                 scrollDeltaRef.current = 0;
@@ -103,12 +111,19 @@ export default function CategoryRecipes({ category, recipes }: Props) {
                 return;
             }
 
+            // ① ページ最下部付近ではバウンスによる誤検知を防ぐためスキップ
+            const isAtBottom = window.innerHeight + currentScrollY >= document.documentElement.scrollHeight - 20;
+            if (isAtBottom) {
+                scrollDeltaRef.current = 0;
+                return;
+            }
+
             // 蓄積量に加算し、しきい値（10px）を超えたら状態を変更してリセット
             scrollDeltaRef.current += delta;
-            if (scrollDeltaRef.current > 10) {
+            if (scrollDeltaRef.current > 50) {
                 setIsSubHeaderVisible(false);
                 scrollDeltaRef.current = 0;
-            } else if (scrollDeltaRef.current < -10) {
+            } else if (scrollDeltaRef.current < -50) {
                 setIsSubHeaderVisible(true);
                 scrollDeltaRef.current = 0;
             }
