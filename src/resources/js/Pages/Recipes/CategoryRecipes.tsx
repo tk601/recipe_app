@@ -1,8 +1,9 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { Head, router, usePage } from '@inertiajs/react';
-import { Heart, ArrowLeft, Search, Plus, X, SlidersHorizontal } from 'lucide-react';
+import { Heart, ArrowLeft, Search, X, SlidersHorizontal } from 'lucide-react';
 import MobileLayout from '@/Layouts/MobileLayout';
 import DesktopLayout from '@/Layouts/DesktopLayout';
+import FloatingActionButton from '@/Components/FloatingActionButton';
 
 interface RecipeCategory {
     id: number;
@@ -501,19 +502,12 @@ export default function CategoryRecipes({ category, recipes }: Props) {
                 )}
 
                 {/* レシピ作成ボタン（浮動）※PC画面・フィルターポップアップ表示中は非表示 */}
-                <button
+                <FloatingActionButton
+                    label="レシピ作成"
                     onClick={() => router.visit(route('recipes.create'))}
-                    className={`md:hidden fixed bottom-24 right-4 px-4 py-3 rounded-full flex items-center gap-2 transition-all duration-200 active:scale-95 z-20 border-2 border-white ${
-                        isFilterOpen ? 'hidden' : ''
-                    }`}
-                    style={{
-                        backgroundColor: 'var(--main-color)',
-                        boxShadow: '0 4px 20px rgba(0,0,0,0.4)',
-                    }}
-                >
-                    <span className="text-white font-bold text-sm">レシピ作成</span>
-                    <Plus className="w-4 h-4 text-white" />
-                </button>
+                    hidden={isFilterOpen}
+                    className="md:hidden"
+                />
             </main>
         </div>
     );

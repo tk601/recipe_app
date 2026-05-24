@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { Head, router } from '@inertiajs/react';
 import { PageProps, ShoppingList } from '@/types';
 import { Trash2, Plus, X, Search, ChevronDown, ChevronUp } from 'lucide-react';
+import FloatingActionButton from '@/Components/FloatingActionButton';
 import MobileLayout from '@/Layouts/MobileLayout';
 import DesktopLayout from '@/Layouts/DesktopLayout';
 
@@ -458,14 +459,11 @@ const ShoppingLists = ({ shoppingLists, ingredients, ingredientCategories }: Sho
 
             {/* 材料追加フローティングボタン（アイテムがある時 かつ モバイルのみ表示） */}
             {shoppingLists.length > 0 && !isDesktop && (
-                <button
+                <FloatingActionButton
+                    label="追加"
                     onClick={openIngredientModal}
-                    className="fixed bottom-24 md:bottom-20 right-4 md:right-16 px-4 py-3 rounded-full flex items-center gap-2 transition-all duration-200 active:scale-95 z-20 border-2 border-white"
-                    style={{ backgroundColor: 'var(--main-color)', boxShadow: '0 4px 20px rgba(0,0,0,0.4)' }}
-                >
-                    <span className="text-white font-bold text-sm">追加</span>
-                    <Plus className="w-4 h-4 text-white" />
-                </button>
+                    className="md:bottom-20 md:right-16"
+                />
             )}
 
             {/* 材料選択モーダル */}
