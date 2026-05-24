@@ -376,10 +376,10 @@ export default function IngredientsIndex({ categories, ingredients, allIngredien
                 </div>
             </div>
 
-            {/* 食材リスト */}
+            {/* 食材リスト：スマホ2列・PC4列グリッド表示 */}
             <main className="max-w-7xl mx-auto px-4 py-4">
                 {filteredIngredients.length > 0 ? (
-                    <div className="space-y-2">
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                         {filteredIngredients.map((ingredient) => (
                             <div
                                 key={ingredient.ingredient_id}
@@ -393,9 +393,10 @@ export default function IngredientsIndex({ categories, ingredients, allIngredien
                                     '--tw-ring-color': highlightedIngredientId === ingredient.ingredient_id ? 'var(--sub-color)' : undefined
                                 } as React.CSSProperties}
                             >
-                                <div className="flex items-center p-4">
-                                    {/* 左側：チェックマーク or バツマーク */}
-                                    <div className="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center"
+                                <div className="flex flex-col items-center p-4 gap-2">
+                                    {/* チェックマーク or バツマーク */}
+                                    <div
+                                        className="w-10 h-10 rounded-full flex items-center justify-center"
                                         style={{
                                             backgroundColor: ingredient.in_refrigerator ? 'var(--main-color)' : 'var(--gray)'
                                         }}
@@ -407,36 +408,24 @@ export default function IngredientsIndex({ categories, ingredients, allIngredien
                                         )}
                                     </div>
 
-                                    {/* 真ん中：食材名とカテゴリ名 */}
-                                    <div className="flex-1 ml-4">
-                                        <h3
-                                            className="font-semibold text-base"
-                                            style={{ color: 'var(--black)' }}
-                                        >
-                                            {ingredient.name}
-                                        </h3>
-                                        <p
-                                            className="text-sm mt-0.5"
-                                            style={{ color: 'var(--dark-gray)' }}
-                                        >
-                                            {ingredient.category_name}
-                                        </p>
-                                    </div>
+                                    {/* 食材名 */}
+                                    <h3
+                                        className="font-semibold text-sm text-center leading-snug"
+                                        style={{ color: 'var(--black)' }}
+                                    >
+                                        {ingredient.name}
+                                    </h3>
 
-                                    {/* 右側：在庫あり・なしの文字 */}
-                                    <div className="flex-shrink-0">
-                                        <span
-                                            className={`px-3 py-1 rounded-full text-xs font-medium ${
-                                                ingredient.in_refrigerator ? 'text-white' : ''
-                                            }`}
-                                            style={{
-                                                backgroundColor: ingredient.in_refrigerator ? 'var(--main-color)' : 'var(--light-gray)',
-                                                color: ingredient.in_refrigerator ? 'white' : 'var(--dark-gray)'
-                                            }}
-                                        >
-                                            {ingredient.in_refrigerator ? '在庫あり' : '在庫なし'}
-                                        </span>
-                                    </div>
+                                    {/* 在庫あり・なしバッジ */}
+                                    <span
+                                        className="px-2 py-0.5 rounded-full text-xs font-medium"
+                                        style={{
+                                            backgroundColor: ingredient.in_refrigerator ? 'var(--main-color)' : 'var(--light-gray)',
+                                            color: ingredient.in_refrigerator ? 'white' : 'var(--dark-gray)'
+                                        }}
+                                    >
+                                        {ingredient.in_refrigerator ? '在庫あり' : '在庫なし'}
+                                    </span>
                                 </div>
                             </div>
                         ))}
