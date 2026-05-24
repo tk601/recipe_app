@@ -72,9 +72,11 @@ export default function CategoryRecipes({ category, recipes }: Props) {
     // 画面サイズを判定（768px以上をPC画面とする）
     const [isDesktop, setIsDesktop] = useState(false);
 
-    // PC用サブヘッダーの表示状態（下スクロール時に非表示）
+    // PC用サブヘッダー・モバイル検索ボックスの表示状態（下スクロール時に非表示）
     const [isSubHeaderVisible, setIsSubHeaderVisible] = useState(true);
     const lastScrollYRef = useRef(0);
+    // 蓄積スクロール量（点滅防止のためにしきい値を超えた時だけ状態変更）
+    const scrollDeltaRef = useRef(0);
 
     useEffect(() => {
         // 初回レンダリング時に画面サイズをチェック
@@ -86,18 +88,29 @@ export default function CategoryRecipes({ category, recipes }: Props) {
         return () => window.removeEventListener('resize', checkScreenSize);
     }, []);
 
-    // スクロール方向を検知してPC用サブヘッダーの表示を制御する
+    // スクロール方向を検知してサブヘッダー・検索ボックスの表示を制御する
     useEffect(() => {
         const handleScroll = () => {
             const currentScrollY = window.scrollY;
-            if (currentScrollY > lastScrollYRef.current && currentScrollY > 60) {
-                // 下スクロール：サブヘッダーを非表示
-                setIsSubHeaderVisible(false);
-            } else {
-                // 上スクロール or ページ上部付近：サブヘッダーを表示
-                setIsSubHeaderVisible(true);
-            }
+            const delta = currentScrollY - lastScrollYRef.current;
             lastScrollYRef.current = currentScrollY;
+
+            // ページ上部付近は常に表示
+            if (currentScrollY <= 60) {
+                scrollDeltaRef.current = 0;
+                setIsSubHeaderVisible(true);
+                return;
+            }
+
+            // 蓄積量に加算し、しきい値（10px）を超えたら状態を変更してリセット
+            scrollDeltaRef.current += delta;
+            if (scrollDeltaRef.current > 10) {
+                setIsSubHeaderVisible(false);
+                scrollDeltaRef.current = 0;
+            } else if (scrollDeltaRef.current < -10) {
+                setIsSubHeaderVisible(true);
+                scrollDeltaRef.current = 0;
+            }
         };
 
         window.addEventListener('scroll', handleScroll, { passive: true });
@@ -292,40 +305,47 @@ export default function CategoryRecipes({ category, recipes }: Props) {
                 </div>
             </div>
 
-            {/* 検索ボックス＋フィルターボタン（スマホのみ表示） */}
-            <div className="md:hidden bg-white border-b px-4 py-3" style={{ borderColor: 'var(--gray)' }}>
-                <div className="flex items-center gap-2">
-                    {/* 検索ボックス */}
-                    <div className="flex-1 relative">
-                        <Search
-                            className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 pointer-events-none"
-                            style={{ color: 'var(--dark-gray)' }}
-                        />
-                        <input
-                            type="text"
-                            placeholder={`${category.recipe_category_name}のレシピを検索`}
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            className="w-full pl-9 pr-4 py-2 rounded-lg border focus:outline-none focus:ring-2 text-sm"
-                            style={{
-                                borderColor: 'var(--gray)',
-                                '--tw-ring-color': 'var(--main-color)'
-                            } as React.CSSProperties}
-                        />
-                    </div>
+            {/* 検索ボックス＋フィルターボタン（スマホのみ・下スクロールで非表示・上スクロールで再表示） */}
+            <div
+                className={`md:hidden sticky z-10 bg-white overflow-hidden ${
+                    isSubHeaderVisible ? 'max-h-20' : 'max-h-0'
+                }`}
+                style={{ top: '112px' }}
+            >
+                <div className="border-b px-4 py-3" style={{ borderColor: 'var(--gray)' }}>
+                    <div className="flex items-center gap-2">
+                        {/* 検索ボックス */}
+                        <div className="flex-1 relative">
+                            <Search
+                                className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 pointer-events-none"
+                                style={{ color: 'var(--dark-gray)' }}
+                            />
+                            <input
+                                type="text"
+                                placeholder={`${category.recipe_category_name}のレシピを検索`}
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                className="w-full pl-9 pr-4 py-2 rounded-lg border focus:outline-none focus:ring-2 text-sm"
+                                style={{
+                                    borderColor: 'var(--gray)',
+                                    '--tw-ring-color': 'var(--main-color)'
+                                } as React.CSSProperties}
+                            />
+                        </div>
 
-                    {/* フィルターボタン（デフォルト'all'以外の選択時はメインカラーで強調） */}
-                    <button
-                        onClick={() => setIsFilterOpen(true)}
-                        className="flex-shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-full text-sm font-medium transition-all"
-                        style={{
-                            backgroundColor: recipeFilter !== 'all' ? 'var(--main-color)' : 'var(--light-gray)',
-                            color: recipeFilter !== 'all' ? 'white' : 'var(--dark-gray)',
-                        }}
-                    >
-                        <SlidersHorizontal className="w-4 h-4" />
-                        <span>フィルター</span>
-                    </button>
+                        {/* フィルターボタン（デフォルト'all'以外の選択時はメインカラーで強調） */}
+                        <button
+                            onClick={() => setIsFilterOpen(true)}
+                            className="flex-shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-full text-sm font-medium transition-all"
+                            style={{
+                                backgroundColor: recipeFilter !== 'all' ? 'var(--main-color)' : 'var(--light-gray)',
+                                color: recipeFilter !== 'all' ? 'white' : 'var(--dark-gray)',
+                            }}
+                        >
+                            <SlidersHorizontal className="w-4 h-4" />
+                            <span>フィルター</span>
+                        </button>
+                    </div>
                 </div>
             </div>
 
