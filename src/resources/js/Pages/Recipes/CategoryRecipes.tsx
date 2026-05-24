@@ -266,15 +266,13 @@ export default function CategoryRecipes({ category, recipes }: Props) {
                 </div>
             </div>
 
-            {/* ===== スマホ用サブヘッダー ===== */}
+            {/* ===== スマホ用サブヘッダー（戻るボタン＋カテゴリ名のみ） ===== */}
             <div
                 className="md:hidden sticky top-14 z-20 bg-white border-b"
                 style={{ borderColor: 'var(--gray)' }}
             >
                 <div className="max-w-7xl mx-auto px-4">
-                    {/* 1行目：戻るボタン＋カテゴリ名（左）　フィルタートグル（右） */}
-                    <div className="flex items-center justify-between py-3">
-                        {/* 左：戻るボタン＋カテゴリ名 */}
+                    <div className="flex items-center py-3">
                         <button
                             onClick={handleBackToCategories}
                             className="flex items-center gap-2 p-1 rounded-lg hover:bg-gray-100 transition-colors"
@@ -290,108 +288,110 @@ export default function CategoryRecipes({ category, recipes }: Props) {
                                 {category.recipe_category_name}
                             </span>
                         </button>
+                    </div>
+                </div>
+            </div>
 
-                        {/* 右：フィルターボタン */}
-                        <button
-                            onClick={() => setIsFilterOpen(true)}
-                            className="flex items-center gap-1.5 px-3 py-2 rounded-full text-sm font-medium transition-all"
+            {/* 検索ボックス＋フィルターボタン（スマホのみ表示） */}
+            <div className="md:hidden bg-white border-b px-4 py-3" style={{ borderColor: 'var(--gray)' }}>
+                <div className="flex items-center gap-2">
+                    {/* 検索ボックス */}
+                    <div className="flex-1 relative">
+                        <Search
+                            className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 pointer-events-none"
+                            style={{ color: 'var(--dark-gray)' }}
+                        />
+                        <input
+                            type="text"
+                            placeholder={`${category.recipe_category_name}のレシピを検索`}
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="w-full pl-9 pr-4 py-2 rounded-lg border focus:outline-none focus:ring-2 text-sm"
                             style={{
-                                backgroundColor: recipeFilter !== 'cookable' ? 'var(--main-color)' : 'var(--light-gray)',
-                                color: recipeFilter !== 'cookable' ? 'white' : 'var(--dark-gray)',
-                            }}
-                        >
-                            <SlidersHorizontal className="w-4 h-4" />
-                            <span>フィルター</span>
-                        </button>
+                                borderColor: 'var(--gray)',
+                                '--tw-ring-color': 'var(--main-color)'
+                            } as React.CSSProperties}
+                        />
                     </div>
 
-                    {/* フィルター選択ポップアップ（オーバーレイ＋モーダル） */}
-                    {isFilterOpen && (
-                        <>
-                            {/* 背景オーバーレイ（タップで閉じる）※フッターより上に重ねる */}
-                            <div
-                                className="fixed inset-0 bg-black/40 z-[55]"
-                                onClick={() => setIsFilterOpen(false)}
-                            />
-
-                            {/* ポップアップ本体（フッターより上・pb-20でフッター分の余白を確保） */}
-                            <div className="fixed bottom-0 left-0 right-0 z-[60] bg-white rounded-t-2xl shadow-xl px-4 pb-20 pt-4">
-                                {/* ハンドル */}
-                                <div className="flex justify-center mb-4">
-                                    <div
-                                        className="w-10 h-1 rounded-full"
-                                        style={{ backgroundColor: 'var(--gray)' }}
-                                    />
-                                </div>
-
-                                {/* タイトル */}
-                                <div className="flex items-center justify-between mb-4">
-                                    <h3
-                                        className="text-base font-bold"
-                                        style={{ color: 'var(--black)' }}
-                                    >
-                                        フィルター
-                                    </h3>
-                                    <button
-                                        onClick={() => setIsFilterOpen(false)}
-                                        className="p-1 rounded-full hover:bg-gray-100 transition-colors"
-                                    >
-                                        <X className="w-5 h-5" style={{ color: 'var(--dark-gray)' }} />
-                                    </button>
-                                </div>
-
-                                {/* フィルター選択肢 */}
-                                <div className="flex flex-col gap-2">
-                                    {(['cookable', 'all', 'my_recipe'] as const).map((filter) => (
-                                        <button
-                                            key={filter}
-                                            onClick={() => handleMobileFilterSelect(filter)}
-                                            className="flex items-center justify-between w-full px-4 py-3 rounded-xl text-sm font-medium transition-all"
-                                            style={{
-                                                backgroundColor: recipeFilter === filter ? 'var(--base-color)' : 'transparent',
-                                                color: recipeFilter === filter ? 'var(--main-color)' : 'var(--black)',
-                                                border: `1.5px solid ${recipeFilter === filter ? 'var(--main-color)' : 'var(--gray)'}`,
-                                            }}
-                                        >
-                                            <span>{filterLabels[filter]}</span>
-                                            {recipeFilter === filter && (
-                                                <span
-                                                    className="w-5 h-5 rounded-full flex items-center justify-center text-white text-xs"
-                                                    style={{ backgroundColor: 'var(--main-color)' }}
-                                                >
-                                                    ✓
-                                                </span>
-                                            )}
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
-                        </>
-                    )}
-
-                </div>
-            </div>
-
-            {/* 検索ボックス（スマホのみ表示・スティッキー外に配置してスクロールで自然に消える） */}
-            <div className="md:hidden bg-white border-b px-4 py-3" style={{ borderColor: 'var(--gray)' }}>
-                <div className="relative">
-                    <Search
-                        className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 pointer-events-none"
-                        style={{ color: 'var(--dark-gray)' }}
-                    />
-                    <input
-                        type="text"
-                        placeholder="レシピ名・食材名で検索"
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full pl-9 pr-4 py-2 rounded-lg border focus:outline-none focus:ring-2 text-sm"
+                    {/* フィルターボタン（デフォルト'all'以外の選択時はメインカラーで強調） */}
+                    <button
+                        onClick={() => setIsFilterOpen(true)}
+                        className="flex-shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-full text-sm font-medium transition-all"
                         style={{
-                            borderColor: 'var(--gray)',
-                            '--tw-ring-color': 'var(--main-color)'
-                        } as React.CSSProperties}
-                    />
+                            backgroundColor: recipeFilter !== 'all' ? 'var(--main-color)' : 'var(--light-gray)',
+                            color: recipeFilter !== 'all' ? 'white' : 'var(--dark-gray)',
+                        }}
+                    >
+                        <SlidersHorizontal className="w-4 h-4" />
+                        <span>フィルター</span>
+                    </button>
                 </div>
             </div>
+
+            {/* フィルター選択ボトムシート（モバイル） */}
+            {isFilterOpen && (
+                <>
+                    {/* 背景オーバーレイ（タップで閉じる） */}
+                    <div
+                        className="fixed inset-0 bg-black/40 z-[55]"
+                        onClick={() => setIsFilterOpen(false)}
+                    />
+
+                    {/* ボトムシート本体 */}
+                    <div className="fixed bottom-0 left-0 right-0 z-[60] bg-white rounded-t-2xl shadow-xl px-4 pb-20 pt-4">
+                        {/* ハンドル */}
+                        <div className="flex justify-center mb-4">
+                            <div
+                                className="w-10 h-1 rounded-full"
+                                style={{ backgroundColor: 'var(--gray)' }}
+                            />
+                        </div>
+
+                        {/* タイトル */}
+                        <div className="flex items-center justify-between mb-4">
+                            <h3
+                                className="text-base font-bold"
+                                style={{ color: 'var(--black)' }}
+                            >
+                                フィルター
+                            </h3>
+                            <button
+                                onClick={() => setIsFilterOpen(false)}
+                                className="p-1 rounded-full hover:bg-gray-100 transition-colors"
+                            >
+                                <X className="w-5 h-5" style={{ color: 'var(--dark-gray)' }} />
+                            </button>
+                        </div>
+
+                        {/* フィルター選択肢 */}
+                        <div className="flex flex-col gap-2">
+                            {(['all', 'cookable', 'my_recipe'] as const).map((filter) => (
+                                <button
+                                    key={filter}
+                                    onClick={() => handleMobileFilterSelect(filter)}
+                                    className="flex items-center justify-between w-full px-4 py-3 rounded-xl text-sm font-medium transition-all"
+                                    style={{
+                                        backgroundColor: recipeFilter === filter ? 'var(--base-color)' : 'transparent',
+                                        color: recipeFilter === filter ? 'var(--main-color)' : 'var(--black)',
+                                        border: `1.5px solid ${recipeFilter === filter ? 'var(--main-color)' : 'var(--gray)'}`,
+                                    }}
+                                >
+                                    <span>{filterLabels[filter]}</span>
+                                    {recipeFilter === filter && (
+                                        <span
+                                            className="w-5 h-5 rounded-full flex items-center justify-center text-white text-xs"
+                                            style={{ backgroundColor: 'var(--main-color)' }}
+                                        >
+                                            ✓
+                                        </span>
+                                    )}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                </>
+            )}
 
             {/* レシピ一覧 */}
             <main className="max-w-7xl mx-auto px-4 py-4">
