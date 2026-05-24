@@ -1,7 +1,7 @@
 import React, { useState, useRef, useMemo, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { Head, router } from '@inertiajs/react';
-import { Check, X } from 'lucide-react';
+import { Check, X, SlidersHorizontal, Search } from 'lucide-react';
 import MobileLayout from '@/Layouts/MobileLayout';
 import DesktopLayout from '@/Layouts/DesktopLayout';
 
@@ -54,11 +54,27 @@ export default function IngredientsIndex({ categories, ingredients, allIngredien
 
     // 在庫フィルターの状態管理: 'all' | 'in_stock' | 'out_of_stock'
     const [stockFilter, setStockFilter] = useState<'all' | 'in_stock' | 'out_of_stock'>('all');
+    // フィルターボトムシートの開閉状態
+    const [isFilterOpen, setIsFilterOpen] = useState(false);
 
     // 検索候補の表示状態
     const [showSuggestions, setShowSuggestions] = useState(false);
     const [highlightedIngredientId, setHighlightedIngredientId] = useState<number | null>(null);
     const searchContainerRef = useRef<HTMLDivElement>(null);
+
+    // カテゴリ横スクロールコンテナのref
+    const categoryScrollRef = useRef<HTMLDivElement>(null);
+    // 各カテゴリボタンのrefマップ
+    const categoryButtonRefs = useRef<Map<number, HTMLButtonElement>>(new Map());
+
+    // activeCategoryが変わったら選択中カテゴリを中央にスクロール
+    useEffect(() => {
+        const container = categoryScrollRef.current;
+        const button = categoryButtonRefs.current.get(activeCategory);
+        if (!container || !button) return;
+        const scrollTo = button.offsetLeft - container.offsetWidth / 2 + button.offsetWidth / 2;
+        container.scrollTo({ left: scrollTo, behavior: 'smooth' });
+    }, [activeCategory]);
 
     // URLパラメータからhighlightIdが渡された場合、ページ読み込み時にハイライト
     React.useEffect(() => {
@@ -213,27 +229,114 @@ export default function IngredientsIndex({ categories, ingredients, allIngredien
         >
             <Head title="食材管理 - ごはんどき" />
 
-            {/* 検索ボックス（モバイル時のみ表示。PC時はDesktopHeaderに表示） */}
+            {/* 検索ボックス + フィルターボタン（モバイル時のみ表示。PC時はDesktopHeaderに表示） */}
             {!isDesktop && (
             <div
                 className="bg-white border-b sticky top-[49px] z-10 px-4 py-3"
                 style={{ borderColor: 'var(--gray)' }}
             >
                 <div className="max-w-7xl mx-auto">
-                    <div className="relative" ref={searchContainerRef}>
-                        <input
-                            type="text"
-                            placeholder="食材を探す"
-                            value={search}
-                            onChange={handleSearch}
-                            className="w-full px-4 py-2 rounded-lg border input-focus"
+                    <div className="flex items-center gap-2">
+                        {/* 検索ボックス */}
+                        <div className="flex-1 relative" ref={searchContainerRef}>
+                            <div
+                                className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none"
+                                style={{ color: 'var(--dark-gray)' }}
+                            >
+                                <Search className="w-4 h-4" />
+                            </div>
+                            <input
+                                type="text"
+                                placeholder="食材を探す"
+                                value={search}
+                                onChange={handleSearch}
+                                className="w-full pl-9 pr-4 py-2 rounded-lg border input-focus"
+                                style={{ borderColor: 'var(--gray)' }}
+                            />
+                        </div>
+
+                        {/* フィルターボタン（在庫フィルター適用中はメインカラーで強調） */}
+                        <button
+                            onClick={() => setIsFilterOpen(true)}
+                            className="flex-shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-full text-sm font-medium transition-all"
                             style={{
-                                borderColor: 'var(--gray)',
+                                backgroundColor: stockFilter !== 'all' ? 'var(--main-color)' : 'var(--light-gray)',
+                                color: stockFilter !== 'all' ? 'white' : 'var(--dark-gray)',
                             }}
-                        />
+                        >
+                            <SlidersHorizontal className="w-4 h-4" />
+                            <span>フィルター</span>
+                        </button>
                     </div>
                 </div>
             </div>
+            )}
+
+            {/* 在庫フィルター選択ボトムシート（モバイル） */}
+            {isFilterOpen && (
+                <>
+                    {/* 背景オーバーレイ（タップで閉じる） */}
+                    <div
+                        className="fixed inset-0 bg-black/40 z-[55]"
+                        onClick={() => setIsFilterOpen(false)}
+                    />
+
+                    {/* ボトムシート本体 */}
+                    <div className="fixed bottom-0 left-0 right-0 z-[60] bg-white rounded-t-2xl shadow-xl px-4 pb-20 pt-4">
+                        {/* ハンドル */}
+                        <div className="flex justify-center mb-4">
+                            <div
+                                className="w-10 h-1 rounded-full"
+                                style={{ backgroundColor: 'var(--gray)' }}
+                            />
+                        </div>
+
+                        {/* タイトル */}
+                        <div className="flex items-center justify-between mb-4">
+                            <h3
+                                className="text-base font-bold"
+                                style={{ color: 'var(--black)' }}
+                            >
+                                フィルター
+                            </h3>
+                            <button
+                                onClick={() => setIsFilterOpen(false)}
+                                className="p-1 rounded-full hover:bg-gray-100 transition-colors"
+                            >
+                                <X className="w-5 h-5" style={{ color: 'var(--dark-gray)' }} />
+                            </button>
+                        </div>
+
+                        {/* フィルター選択肢 */}
+                        <div className="flex flex-col gap-2">
+                            {(['all', 'in_stock', 'out_of_stock'] as const).map((filter) => {
+                                const label = filter === 'all' ? 'すべて' : filter === 'in_stock' ? '在庫あり' : '在庫なし';
+                                return (
+                                    <button
+                                        key={filter}
+                                        onClick={() => { setStockFilter(filter); setIsFilterOpen(false); }}
+                                        className="flex items-center justify-between w-full px-4 py-3 rounded-xl text-sm font-medium transition-all"
+                                        style={{
+                                            backgroundColor: stockFilter === filter ? 'var(--base-color)' : 'transparent',
+                                            color: stockFilter === filter ? 'var(--main-color)' : 'var(--black)',
+                                            border: `1.5px solid ${stockFilter === filter ? 'var(--main-color)' : 'var(--gray)'}`,
+                                        }}
+                                    >
+                                        <span>{label}</span>
+                                        {stockFilter === filter && (
+                                            <span
+                                                className="w-5 h-5 rounded-full flex items-center justify-center text-white text-xs"
+                                                style={{ backgroundColor: 'var(--main-color)' }}
+                                            >
+                                                ✓
+                                            </span>
+                                        )}
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    </div>
+                </>
             )}
 
             {/* 検索候補のドロップダウン（Portalで描画） */}
@@ -293,10 +396,14 @@ export default function IngredientsIndex({ categories, ingredients, allIngredien
                 style={{ borderColor: 'var(--gray)' }}
             >
                 <div className="max-w-7xl mx-auto px-4">
-                    <div className="flex space-x-2 py-3 overflow-x-auto scrollbar-hide">
+                    <div className="flex space-x-2 py-3 overflow-x-auto scrollbar-hide" ref={categoryScrollRef}>
                         {categories.map((category) => (
                             <button
                                 key={category.id}
+                                ref={(el) => {
+                                    if (el) categoryButtonRefs.current.set(category.id, el);
+                                    else categoryButtonRefs.current.delete(category.id);
+                                }}
                                 onClick={() => handleCategorySelect(category.id)}
                                 className={`
                                     flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-all duration-200
@@ -318,65 +425,8 @@ export default function IngredientsIndex({ categories, ingredients, allIngredien
                 </div>
             </div>
 
-            {/* 在庫フィルター */}
-            <div
-                className="bg-white border-b sticky top-[153px] z-10"
-                style={{ borderColor: 'var(--gray)' }}
-            >
-                <div className="max-w-7xl mx-auto px-4">
-                    <div className="flex space-x-2 py-3">
-                        {/* すべて */}
-                        <button
-                            onClick={() => setStockFilter('all')}
-                            className={`
-                                flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200
-                                ${stockFilter === 'all' ? 'text-white shadow-md' : 'text-gray-700 hover:bg-gray-50'}
-                            `}
-                            style={{
-                                backgroundColor: stockFilter === 'all' ? 'var(--main-color)' : 'white',
-                                borderWidth: 1,
-                                borderColor: stockFilter === 'all' ? 'var(--main-color)' : 'var(--gray)',
-                            }}
-                        >
-                            すべて
-                        </button>
 
-                        {/* 在庫あり */}
-                        <button
-                            onClick={() => setStockFilter('in_stock')}
-                            className={`
-                                flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200
-                                ${stockFilter === 'in_stock' ? 'text-white shadow-md' : 'text-gray-700 hover:bg-gray-50'}
-                            `}
-                            style={{
-                                backgroundColor: stockFilter === 'in_stock' ? 'var(--main-color)' : 'white',
-                                borderWidth: 1,
-                                borderColor: stockFilter === 'in_stock' ? 'var(--main-color)' : 'var(--gray)',
-                            }}
-                        >
-                            在庫あり
-                        </button>
-
-                        {/* 在庫なし */}
-                        <button
-                            onClick={() => setStockFilter('out_of_stock')}
-                            className={`
-                                flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200
-                                ${stockFilter === 'out_of_stock' ? 'text-white shadow-md' : 'text-gray-700 hover:bg-gray-50'}
-                            `}
-                            style={{
-                                backgroundColor: stockFilter === 'out_of_stock' ? 'var(--main-color)' : 'white',
-                                borderWidth: 1,
-                                borderColor: stockFilter === 'out_of_stock' ? 'var(--main-color)' : 'var(--gray)',
-                            }}
-                        >
-                            在庫なし
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            {/* 食材リスト：スマホ2列・PC4列グリッド表示 */}
+{/* 食材リスト：スマホ2列・PC4列グリッド表示 */}
             <main className="max-w-7xl mx-auto px-4 py-4">
                 {filteredIngredients.length > 0 ? (
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
