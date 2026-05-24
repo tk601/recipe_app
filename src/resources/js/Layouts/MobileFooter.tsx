@@ -15,7 +15,7 @@ const MobileFooter = ({ currentPage = 'refrigerators' }: MobileFooterProps) => {
 
     return (
         <footer
-            className="fixed bottom-0 left-0 right-0 bg-white border-t z-50 shadow-lg"
+            className="fixed bottom-0 left-0 right-0 bg-white border-t z-[65] shadow-lg"
             style={{ borderColor: 'var(--gray)' }}
         >
             <div className="flex justify-around items-center max-w-7xl mx-auto">
