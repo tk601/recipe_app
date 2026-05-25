@@ -309,7 +309,7 @@ const ShoppingLists = ({ shoppingLists, ingredients, ingredientCategories }: Sho
             <Head title="買い物リスト - ごはんどき" />
 
             {/* 買い物リストの内容 */}
-            <main className="max-w-7xl mx-auto px-4 py-4">
+            <main className="max-w-7xl mx-auto px-4 pt-4 pb-24 md:pb-4">
                 {shoppingLists.length === 0 ? (
                     // 空の状態：PC/スマホで異なる画像を表示＋リスト追加ボタン
                     <div className="text-center py-8">

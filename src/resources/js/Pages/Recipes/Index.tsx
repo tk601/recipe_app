@@ -426,7 +426,7 @@ export default function RecipesIndex({ categories, favoriteRecipes, favoritesPag
             )}
 
             {/* メインコンテンツ：検索中は検索結果、それ以外はカテゴリ＋お気に入り */}
-            <main className="max-w-7xl mx-auto px-4 py-4">
+            <main className="max-w-7xl mx-auto px-4 pt-4 pb-24 md:pb-4">
                 {searchQuery ? (
                     /* 検索結果セクション */
                     <div>

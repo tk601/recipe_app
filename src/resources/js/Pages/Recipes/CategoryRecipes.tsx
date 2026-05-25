@@ -456,7 +456,7 @@ export default function CategoryRecipes({ category, recipes }: Props) {
             )}
 
             {/* レシピ一覧 */}
-            <main className="max-w-7xl mx-auto px-4 py-4">
+            <main className="max-w-7xl mx-auto px-4 pt-4 pb-24 md:pb-4">
                 {filteredRecipes.length > 0 ? (
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                         {filteredRecipes.map((recipe) => (
