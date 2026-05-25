@@ -61,6 +61,21 @@ const ShoppingLists = ({ shoppingLists, ingredients, ingredientCategories }: Sho
     const [showSearchSuggestions, setShowSearchSuggestions] = useState(false);
     const searchInputRef = useRef<HTMLDivElement>(null);
 
+    // カテゴリ横スクロールコンテナのref
+    const categoryScrollRef = useRef<HTMLDivElement>(null);
+    // 各カテゴリボタンのrefマップ
+    const categoryButtonRefs = useRef<Map<number, HTMLButtonElement>>(new Map());
+
+    // 選択カテゴリが変わったら中央にスクロール
+    useEffect(() => {
+        if (selectedCategoryId === null) return;
+        const container = categoryScrollRef.current;
+        const button = categoryButtonRefs.current.get(selectedCategoryId);
+        if (!container || !button) return;
+        const scrollTo = button.offsetLeft - container.offsetWidth / 2 + button.offsetWidth / 2;
+        container.scrollTo({ left: scrollTo, behavior: 'smooth' });
+    }, [selectedCategoryId]);
+
     // 削除確認モーダル（アイテム単体）
     const [deleteItemId, setDeleteItemId] = useState<number | null>(null);
 
@@ -469,17 +484,18 @@ const ShoppingLists = ({ shoppingLists, ingredients, ingredientCategories }: Sho
             {/* 材料選択モーダル */}
             {showIngredientModal && (
                 <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-                    <div className="bg-white w-full max-w-2xl max-h-[80vh] rounded-2xl overflow-hidden">
-                        {/* モーダルヘッダー */}
-                        <div className="flex justify-between items-center p-4 border-b" style={{ borderColor: 'var(--gray)' }}>
+                    {/* flex flex-col で高さを分割し、食材リストだけをスクロールさせる */}
+                    <div className="bg-white w-full max-w-2xl max-h-[80vh] rounded-2xl overflow-hidden flex flex-col">
+                        {/* モーダルヘッダー（固定） */}
+                        <div className="flex-shrink-0 flex justify-between items-center p-4 border-b" style={{ borderColor: 'var(--gray)' }}>
                             <h3 className="font-bold" style={{ color: 'var(--black)' }}>材料を選択</h3>
                             <button onClick={closeIngredientModal}>
                                 <X className="w-6 h-6" style={{ color: 'var(--dark-gray)' }} />
                             </button>
                         </div>
 
-                        {/* 検索ボックス */}
-                        <div className="p-4 border-b space-y-3" style={{ borderColor: 'var(--gray)' }}>
+                        {/* 検索ボックス（固定） */}
+                        <div className="flex-shrink-0 p-4 border-b space-y-3" style={{ borderColor: 'var(--gray)' }}>
                             <div className="relative" ref={searchInputRef}>
                                 <Search
                                     className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5"
@@ -545,11 +561,19 @@ const ShoppingLists = ({ shoppingLists, ingredients, ingredientCategories }: Sho
                             document.body
                         )}
 
-                        {/* カテゴリタブ */}
-                        <div className="flex overflow-x-auto p-2 border-b" style={{ borderColor: 'var(--gray)' }}>
+                        {/* カテゴリタブ（固定） */}
+                        <div
+                            ref={categoryScrollRef}
+                            className="flex-shrink-0 flex overflow-x-auto p-2 border-b scrollbar-hide"
+                            style={{ borderColor: 'var(--gray)' }}
+                        >
                             {ingredientCategories.map(cat => (
                                 <button
                                     key={cat.id}
+                                    ref={(el) => {
+                                        if (el) categoryButtonRefs.current.set(cat.id, el);
+                                        else categoryButtonRefs.current.delete(cat.id);
+                                    }}
                                     onClick={() => setSelectedCategoryId(cat.id)}
                                     className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap mr-2 ${
                                         selectedCategoryId === cat.id ? '' : 'opacity-60'
@@ -564,8 +588,8 @@ const ShoppingLists = ({ shoppingLists, ingredients, ingredientCategories }: Sho
                             ))}
                         </div>
 
-                        {/* 食材リスト */}
-                        <div className="overflow-y-auto p-4" style={{ maxHeight: 'calc(80vh - 220px)' }}>
+                        {/* 食材リスト（flex-1 で残りの高さを使ってスクロール） */}
+                        <div className="flex-1 overflow-y-auto p-4">
                             {filteredIngredients.length > 0 ? (
                                 <div className="grid grid-cols-2 gap-2">
                                     {filteredIngredients.map(ing => (
@@ -594,8 +618,8 @@ const ShoppingLists = ({ shoppingLists, ingredients, ingredientCategories }: Sho
                             )}
                         </div>
 
-                        {/* 確定ボタン・自由入力ボタン */}
-                        <div className="p-4 border-t space-y-2" style={{ borderColor: 'var(--gray)' }}>
+                        {/* 確定ボタン・自由入力ボタン（固定） */}
+                        <div className="flex-shrink-0 p-4 border-t space-y-2" style={{ borderColor: 'var(--gray)' }}>
                             <button
                                 onClick={confirmIngredientSelection}
                                 disabled={tempSelectedIngredients.size === 0}
