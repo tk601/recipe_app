@@ -82,6 +82,40 @@ export default function IngredientsIndex({ categories, ingredients, allIngredien
         }
     }, [isDesktop]);
 
+    // スクロールによる検索ボックスの表示/非表示（モバイルのみ）
+    const [isSearchVisible, setIsSearchVisible] = useState(true);
+    const lastScrollYRef = useRef(0);
+    const scrollDeltaRef = useRef(0);
+
+    useEffect(() => {
+        if (isDesktop) return;
+
+        const handleScroll = () => {
+            const currentScrollY = window.scrollY;
+            const delta = currentScrollY - lastScrollYRef.current;
+            lastScrollYRef.current = currentScrollY;
+
+            // スクロール量が少ないページは常に表示
+            const scrollableHeight = document.documentElement.scrollHeight - window.innerHeight;
+            if (scrollableHeight < 150) { setIsSearchVisible(true); return; }
+
+            // 最上部付近は常に表示
+            if (currentScrollY <= 60) { setIsSearchVisible(true); scrollDeltaRef.current = 0; return; }
+
+            // 最下部では非表示への切り替えをスキップ（点滅防止）
+            const isAtBottom = window.innerHeight + currentScrollY >= document.documentElement.scrollHeight - 20;
+            if (isAtBottom) { scrollDeltaRef.current = 0; return; }
+
+            // 50px分の方向が確定したら切り替える（点滅防止）
+            scrollDeltaRef.current += delta;
+            if (scrollDeltaRef.current > 50) { setIsSearchVisible(false); scrollDeltaRef.current = 0; }
+            else if (scrollDeltaRef.current < -50) { setIsSearchVisible(true); scrollDeltaRef.current = 0; }
+        };
+
+        window.addEventListener('scroll', handleScroll, { passive: true });
+        return () => window.removeEventListener('scroll', handleScroll);
+    }, [isDesktop]);
+
     // activeCategoryが変わったら選択中カテゴリを中央にスクロール
     useEffect(() => {
         const container = categoryScrollRef.current;
@@ -248,11 +282,16 @@ export default function IngredientsIndex({ categories, ingredients, allIngredien
             {/* fixed にしてアドレスバー高さ変化による1pxずれを防止 */}
             {!isDesktop && (
             <>
-            <div style={{ height: searchBoxHeight }} />
+            {/* スクロールで非表示のときスペーサーをゼロにしてコンテンツが詰まるのを防ぐ */}
+            <div style={{ height: isSearchVisible ? searchBoxHeight : 0 }} />
             <div
                 ref={searchBoxRef}
                 className="bg-white border-b fixed left-0 right-0 z-10 px-4 py-3"
-                style={{ top: `${56 + categoryBarHeight}px`, borderColor: 'var(--gray)' }}
+                style={{
+                    top: `${56 + categoryBarHeight}px`,
+                    borderColor: 'var(--gray)',
+                    display: isSearchVisible ? undefined : 'none',
+                }}
             >
                 <div className="max-w-7xl mx-auto">
                     <div className="flex items-center gap-2">
