@@ -82,6 +82,9 @@ export default function CategoryRecipes({ category, recipes }: Props) {
     const mobileSubHeaderRef = useRef<HTMLDivElement>(null);
     // スマホ用サブヘッダーの高さ（スペーサーに使用）
     const [mobileSubHeaderHeight, setMobileSubHeaderHeight] = useState(0);
+    // 検索ボックスのDOM参照と高さ（fixed時のスペーサー計算用）
+    const mobileSearchBoxRef = useRef<HTMLDivElement>(null);
+    const [mobileSearchBoxHeight, setMobileSearchBoxHeight] = useState(56);
 
     useEffect(() => {
         // 初回レンダリング時に画面サイズをチェック
@@ -93,10 +96,11 @@ export default function CategoryRecipes({ category, recipes }: Props) {
         return () => window.removeEventListener('resize', checkScreenSize);
     }, []);
 
-    // スマホ用サブヘッダーの実際の高さを計測してスペーサーに反映
+    // スマホ用サブヘッダー・検索ボックスの実際の高さを計測してスペーサーに反映
     useEffect(() => {
-        if (!isDesktop && mobileSubHeaderRef.current) {
-            setMobileSubHeaderHeight(mobileSubHeaderRef.current.offsetHeight);
+        if (!isDesktop) {
+            if (mobileSubHeaderRef.current) setMobileSubHeaderHeight(mobileSubHeaderRef.current.offsetHeight);
+            if (mobileSearchBoxRef.current) setMobileSearchBoxHeight(mobileSearchBoxRef.current.offsetHeight);
         }
     }, [isDesktop]);
 
@@ -335,14 +339,22 @@ export default function CategoryRecipes({ category, recipes }: Props) {
                 </div>
             </div>
 
+            {/* 検索ボックスのスペーサー（fixedの分だけドキュメントフローにスペースを確保） */}
+            {!isDesktop && (
+                <div style={{ height: isSubHeaderVisible ? mobileSearchBoxHeight : 0 }} />
+            )}
+
             {/* 検索ボックス＋フィルターボタン（スマホのみ・下スクロールで非表示・上スクロールで再表示） */}
             <div
-                className={`md:hidden sticky z-10 bg-white overflow-hidden ${
-                    isSubHeaderVisible ? 'max-h-20' : 'max-h-0'
-                }`}
-                style={{ top: '112px' }}
+                ref={mobileSearchBoxRef}
+                className="md:hidden fixed left-0 right-0 z-10 bg-white border-b"
+                style={{
+                    top: `${56 + mobileSubHeaderHeight}px`,
+                    borderColor: 'var(--gray)',
+                    display: isSubHeaderVisible ? undefined : 'none',
+                }}
             >
-                <div className="border-b px-4 py-3" style={{ borderColor: 'var(--gray)' }}>
+                <div className="px-4 py-3">
                     <div className="flex items-center gap-2">
                         {/* 検索ボックス */}
                         <div className="flex-1 relative">
