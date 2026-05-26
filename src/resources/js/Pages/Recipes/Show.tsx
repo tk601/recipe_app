@@ -782,9 +782,9 @@ export default function RecipeShow({ recipe, ingredients, instructions }: Props)
                     <div className="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-black/50 to-transparent" />
                 </div>
 
-                <main className="max-w-6xl mx-auto px-4">
+                <main className="max-w-6xl mx-auto px-4 pt-4">
                     {/* レシピ名といいね数 */}
-                    <div className="bg-white rounded-t-3xl -mt-6 relative z-10 px-6 py-5 shadow-sm">
+                    <div className="bg-white rounded-t-3xl px-6 py-5 shadow-sm">
                         <h1
                             className="text-2xl font-bold mb-2"
                             style={{ color: 'var(--black)' }}
