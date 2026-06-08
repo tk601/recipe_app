@@ -3,6 +3,7 @@ import { Head, router, useForm } from '@inertiajs/react';
 import { ArrowLeft, Plus, X, Upload, Image as ImageIcon } from 'lucide-react';
 import DesktopLayout from '@/Layouts/DesktopLayout';
 import IngredientSelectModal from '@/Components/IngredientSelectModal';
+import AlertModal from '@/Components/AlertModal';
 
 // 食材の型定義
 interface Ingredient {
@@ -110,6 +111,9 @@ export default function RecipeEdit({ recipe, recipeIngredients, instructions: in
 
     // 削除確認モーダルの表示状態
     const [showDeleteModal, setShowDeleteModal] = useState(false);
+
+    // アラートモーダルの状態（メッセージが空の場合は非表示）
+    const [alertMessage, setAlertMessage] = useState('');
 
     // 画面サイズを判定（768px以上をPC画面とする）
     const [isDesktop, setIsDesktop] = useState(false);
@@ -278,19 +282,19 @@ export default function RecipeEdit({ recipe, recipeIngredients, instructions: in
     const handleSave = () => {
         // バリデーション
         if (!data.recipe_name) {
-            alert('レシピ名を入力してください');
+            setAlertMessage('レシピ名を入力してください');
             return;
         }
         if (!data.recipe_category_id) {
-            alert('カテゴリを選択してください');
+            setAlertMessage('カテゴリを選択してください');
             return;
         }
         if (data.ingredients.length === 0) {
-            alert('材料を追加してください');
+            setAlertMessage('材料を追加してください');
             return;
         }
         if (data.instructions.length === 0) {
-            alert('調理手順を追加してください');
+            setAlertMessage('調理手順を追加してください');
             return;
         }
 
@@ -783,6 +787,11 @@ export default function RecipeEdit({ recipe, recipeIngredients, instructions: in
                     {/* モーダル */}
                     {ingredientModal}
                     {deleteModal}
+                    <AlertModal
+                        isOpen={!!alertMessage}
+                        message={alertMessage}
+                        onClose={() => setAlertMessage('')}
+                    />
                 </div>
             </DesktopLayout>
         );
@@ -1093,6 +1102,11 @@ export default function RecipeEdit({ recipe, recipeIngredients, instructions: in
             {/* モーダル */}
             {ingredientModal}
             {deleteModal}
+            <AlertModal
+                isOpen={!!alertMessage}
+                message={alertMessage}
+                onClose={() => setAlertMessage('')}
+            />
         </div>
     );
 }

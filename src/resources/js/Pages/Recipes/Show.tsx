@@ -3,6 +3,7 @@ import { Head, router, usePage } from '@inertiajs/react';
 import { ArrowLeft, Heart, Refrigerator as RefrigeratorIcon, X, Edit } from 'lucide-react';
 import MobileLayout from '@/Layouts/MobileLayout';
 import DesktopLayout from '@/Layouts/DesktopLayout';
+import AlertModal from '@/Components/AlertModal';
 
 interface Recipe {
     id: number;
@@ -60,6 +61,9 @@ export default function RecipeShow({ recipe, ingredients, instructions }: Props)
 
     // 冷蔵庫確認モーダルの表示状態
     const [showRefrigeratorModal, setShowRefrigeratorModal] = useState(false);
+
+    // アラートモーダルの状態（メッセージが空の場合は非表示）
+    const [alertMessage, setAlertMessage] = useState('');
 
     // 選択された食材ID
     const [selectedIngredientIds, setSelectedIngredientIds] = useState<Set<number>>(new Set());
@@ -200,7 +204,7 @@ export default function RecipeShow({ recipe, ingredients, instructions }: Props)
      */
     const handleRemoveFromRefrigerator = () => {
         if (selectedIngredientIds.size === 0) {
-            alert('食材を選択してください');
+            setAlertMessage('食材を選択してください');
             return;
         }
         const inStockIngredientIds = Array.from(selectedIngredientIds).filter(id => {
@@ -208,7 +212,7 @@ export default function RecipeShow({ recipe, ingredients, instructions }: Props)
             return ingredient?.in_stock === true;
         });
         if (inStockIngredientIds.length === 0) {
-            alert('冷蔵庫に在庫のある食材を選択してください');
+            setAlertMessage('冷蔵庫に在庫のある食材を選択してください');
             return;
         }
         router.post(route('recipes.remove-from-refrigerator'), {
@@ -227,7 +231,7 @@ export default function RecipeShow({ recipe, ingredients, instructions }: Props)
      */
     const handleMoveToShoppingList = () => {
         if (selectedIngredientIds.size === 0) {
-            alert('食材を選択してください');
+            setAlertMessage('食材を選択してください');
             return;
         }
         const selectedIdsArray = Array.from(selectedIngredientIds);
@@ -715,6 +719,11 @@ export default function RecipeShow({ recipe, ingredients, instructions }: Props)
 
                     {/* 冷蔵庫確認モーダル */}
                     {refrigeratorModal}
+                    <AlertModal
+                        isOpen={!!alertMessage}
+                        message={alertMessage}
+                        onClose={() => setAlertMessage('')}
+                    />
                 </div>
             </DesktopLayout>
         );
@@ -917,6 +926,11 @@ export default function RecipeShow({ recipe, ingredients, instructions }: Props)
 
                 {/* 冷蔵庫確認モーダル */}
                 {refrigeratorModal}
+                <AlertModal
+                    isOpen={!!alertMessage}
+                    message={alertMessage}
+                    onClose={() => setAlertMessage('')}
+                />
             </div>
         </MobileLayout>
     );
