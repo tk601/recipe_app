@@ -1,8 +1,8 @@
-import React, { useState, useRef, useMemo, useEffect } from 'react';
-import { createPortal } from 'react-dom';
+import React, { useState, useRef, useEffect } from 'react';
 import { Head, router, useForm } from '@inertiajs/react';
-import { ArrowLeft, Plus, X, Upload, Image as ImageIcon, Search } from 'lucide-react';
+import { ArrowLeft, Plus, X, Upload, Image as ImageIcon } from 'lucide-react';
 import DesktopLayout from '@/Layouts/DesktopLayout';
+import IngredientSelectModal from '@/Components/IngredientSelectModal';
 
 // 食材の型定義
 interface Ingredient {
@@ -71,19 +71,6 @@ export default function RecipeCreate({ ingredients, ingredientCategories, recipe
     // 食材選択モーダルの表示状態
     const [showIngredientModal, setShowIngredientModal] = useState(false);
 
-    // 選択中の食材カテゴリ
-    const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
-
-    // 一時的に選択された食材ID
-    const [tempSelectedIngredients, setTempSelectedIngredients] = useState<Set<number>>(new Set());
-
-    // 食材検索キーワード
-    const [ingredientSearchKeyword, setIngredientSearchKeyword] = useState('');
-
-    // 検索候補の表示状態
-    const [showSearchSuggestions, setShowSearchSuggestions] = useState(false);
-    const searchInputRef = useRef<HTMLDivElement>(null);
-
     // 公開確認モーダルの表示状態
     const [showPublishModal, setShowPublishModal] = useState(false);
 
@@ -146,37 +133,13 @@ export default function RecipeCreate({ ingredients, ingredientCategories, recipe
      */
     const openIngredientModal = () => {
         setShowIngredientModal(true);
-        setSelectedCategoryId(ingredientCategories[0]?.id || null);
     };
 
     /**
-     * 食材選択モーダルを閉じる
+     * 選択した食材を確定してフォームに追加
      */
-    const closeIngredientModal = () => {
-        setShowIngredientModal(false);
-        setTempSelectedIngredients(new Set());
-        setIngredientSearchKeyword('');
-        setShowSearchSuggestions(false);
-    };
-
-    /**
-     * 食材の選択/選択解除
-     */
-    const toggleIngredientSelection = (ingredientId: number) => {
-        const newSelection = new Set(tempSelectedIngredients);
-        if (newSelection.has(ingredientId)) {
-            newSelection.delete(ingredientId);
-        } else {
-            newSelection.add(ingredientId);
-        }
-        setTempSelectedIngredients(newSelection);
-    };
-
-    /**
-     * 選択した食材を確定
-     */
-    const confirmIngredientSelection = () => {
-        const newIngredients = Array.from(tempSelectedIngredients).map(id => {
+    const handleConfirmIngredients = (selectedIds: Set<number>) => {
+        const newIngredients = Array.from(selectedIds).map(id => {
             const ingredient = ingredients.find(ing => ing.id === id);
             return {
                 ingredient_id: id,
@@ -185,9 +148,8 @@ export default function RecipeCreate({ ingredients, ingredientCategories, recipe
                 unit: '',
             };
         });
-
         setData('ingredients', [...data.ingredients, ...newIngredients]);
-        closeIngredientModal();
+        setShowIngredientModal(false);
     };
 
     /**
@@ -328,218 +290,21 @@ export default function RecipeCreate({ ingredients, ingredientCategories, recipe
         });
     };
 
-    /**
-     * 検索候補をフィルタリング
-     */
-    const searchSuggestions = useMemo(() => {
-        if (!ingredientSearchKeyword.trim()) return [];
-
-        return ingredients.filter(ingredient =>
-            ingredient.name.toLowerCase().includes(ingredientSearchKeyword.toLowerCase())
-        ).slice(0, 10);
-    }, [ingredientSearchKeyword, ingredients]);
-
-    /**
-     * 検索入力の変更処理
-     */
-    const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const value = e.target.value;
-        setIngredientSearchKeyword(value);
-        if (value.trim()) {
-            setShowSearchSuggestions(true);
-        } else {
-            setShowSearchSuggestions(false);
-        }
-    };
-
-    /**
-     * 検索候補から食材を選択
-     */
-    const handleSelectFromSuggestion = (ingredientId: number, ingredientName: string, categoryId: number) => {
-        setShowSearchSuggestions(false);
-        setIngredientSearchKeyword('');
-        setSelectedCategoryId(categoryId);
-
-        const newSelection = new Set(tempSelectedIngredients);
-        newSelection.add(ingredientId);
-        setTempSelectedIngredients(newSelection);
-    };
-
-    /**
-     * 検索候補の外側をクリックしたら閉じる
-     */
-    React.useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
-            const target = event.target as HTMLElement;
-            if (target.closest('[data-suggestion-item]')) {
-                return;
-            }
-            if (searchInputRef.current && !searchInputRef.current.contains(target)) {
-                setShowSearchSuggestions(false);
-            }
-        };
-
-        if (showIngredientModal) {
-            document.addEventListener('mousedown', handleClickOutside);
-            return () => {
-                document.removeEventListener('mousedown', handleClickOutside);
-            };
-        }
-    }, [showIngredientModal]);
-
-    // カテゴリでフィルタリングされた食材
-    const filteredIngredients = ingredients.filter(ing => {
-        const categoryMatch = selectedCategoryId
-            ? ing.ingredient_category_id === selectedCategoryId
-            : true;
-        return categoryMatch;
-    });
-
     // =============================================
     // 食材選択モーダル（PC・モバイル共通）
     // =============================================
-    const ingredientModal = showIngredientModal ? (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-            <div className="bg-white w-full max-w-2xl max-h-[80vh] rounded-2xl overflow-hidden">
-                {/* モーダルヘッダー */}
-                <div className="flex justify-between items-center p-4 border-b" style={{ borderColor: 'var(--gray)' }}>
-                    <h3 className="font-bold" style={{ color: 'var(--black)' }}>材料を選択</h3>
-                    <button onClick={closeIngredientModal}>
-                        <X className="w-6 h-6" style={{ color: 'var(--dark-gray)' }} />
-                    </button>
-                </div>
-
-                {/* 検索ボックス */}
-                <div className="p-4 border-b" style={{ borderColor: 'var(--gray)' }}>
-                    <div className="relative" ref={searchInputRef}>
-                        <Search
-                            className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5"
-                            style={{ color: 'var(--dark-gray)' }}
-                        />
-                        <input
-                            type="text"
-                            value={ingredientSearchKeyword}
-                            onChange={handleSearchChange}
-                            placeholder="食材を検索..."
-                            className="w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2"
-                            style={{
-                                borderColor: 'var(--gray)',
-                                '--tw-ring-color': 'var(--main-color)'
-                            } as React.CSSProperties}
-                        />
-                    </div>
-
-                    {/* 検索候補のドロップダウン */}
-                    {showSearchSuggestions && searchSuggestions.length > 0 && searchInputRef.current && createPortal(
-                        <div
-                            className="fixed bg-white border rounded-lg shadow-lg max-h-64 overflow-y-auto"
-                            style={{
-                                borderColor: 'var(--gray)',
-                                top: searchInputRef.current.getBoundingClientRect().bottom + 4,
-                                left: searchInputRef.current.getBoundingClientRect().left,
-                                width: searchInputRef.current.offsetWidth,
-                                zIndex: 10001,
-                            }}
-                        >
-                            {searchSuggestions.map((ingredient) => {
-                                const category = ingredientCategories.find(cat => cat.id === ingredient.ingredient_category_id);
-                                return (
-                                    <button
-                                        key={ingredient.id}
-                                        data-suggestion-item
-                                        onClick={() => handleSelectFromSuggestion(ingredient.id, ingredient.name, ingredient.ingredient_category_id)}
-                                        className="w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center justify-between border-b last:border-b-0"
-                                        style={{ borderColor: 'var(--gray)' }}
-                                    >
-                                        <div className="flex-1">
-                                            <div className="font-medium" style={{ color: 'var(--black)' }}>
-                                                {ingredient.name}
-                                            </div>
-                                            <div className="text-xs mt-0.5" style={{ color: 'var(--dark-gray)' }}>
-                                                {category?.name}
-                                            </div>
-                                        </div>
-                                        <div
-                                            className="px-2 py-1 rounded text-xs"
-                                            style={{
-                                                backgroundColor: tempSelectedIngredients.has(ingredient.id) ? 'var(--main-color)' : 'var(--light-gray)',
-                                                color: tempSelectedIngredients.has(ingredient.id) ? 'white' : 'var(--dark-gray)'
-                                            }}
-                                        >
-                                            {tempSelectedIngredients.has(ingredient.id) ? '選択中' : '未選択'}
-                                        </div>
-                                    </button>
-                                );
-                            })}
-                        </div>,
-                        document.body
-                    )}
-                </div>
-
-                {/* カテゴリタブ */}
-                <div className="flex overflow-x-auto p-2 border-b" style={{ borderColor: 'var(--gray)' }}>
-                    {ingredientCategories.map(cat => (
-                        <button
-                            key={cat.id}
-                            onClick={() => setSelectedCategoryId(cat.id)}
-                            className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap mr-2 ${
-                                selectedCategoryId === cat.id ? '' : 'opacity-60'
-                            }`}
-                            style={{
-                                backgroundColor: selectedCategoryId === cat.id ? 'var(--main-color)' : 'var(--light-gray)',
-                                color: selectedCategoryId === cat.id ? 'white' : 'var(--dark-gray)'
-                            }}
-                        >
-                            {cat.name}
-                        </button>
-                    ))}
-                </div>
-
-                {/* 食材リスト */}
-                <div className="overflow-y-auto p-4" style={{ maxHeight: 'calc(80vh - 220px)' }}>
-                    {filteredIngredients.length > 0 ? (
-                        <div className="grid grid-cols-2 gap-2">
-                            {filteredIngredients.map(ing => (
-                                <button
-                                    key={ing.id}
-                                    onClick={() => toggleIngredientSelection(ing.id)}
-                                    className={`p-3 rounded-lg border text-sm transition-all ${
-                                        tempSelectedIngredients.has(ing.id) ? 'font-bold' : ''
-                                    }`}
-                                    style={{
-                                        borderColor: tempSelectedIngredients.has(ing.id) ? 'var(--main-color)' : 'var(--gray)',
-                                        backgroundColor: tempSelectedIngredients.has(ing.id) ? 'var(--main-color)' : 'white',
-                                        color: tempSelectedIngredients.has(ing.id) ? 'white' : 'var(--black)'
-                                    }}
-                                >
-                                    {ing.name}
-                                </button>
-                            ))}
-                        </div>
-                    ) : (
-                        <div className="text-center py-8">
-                            <p className="text-sm" style={{ color: 'var(--dark-gray)' }}>
-                                該当する食材が見つかりませんでした
-                            </p>
-                        </div>
-                    )}
-                </div>
-
-                {/* 確定ボタン */}
-                <div className="p-4 border-t" style={{ borderColor: 'var(--gray)' }}>
-                    <button
-                        onClick={confirmIngredientSelection}
-                        disabled={tempSelectedIngredients.size === 0}
-                        className="w-full py-3 rounded-lg font-bold text-white"
-                        style={{ backgroundColor: tempSelectedIngredients.size === 0 ? 'var(--gray)' : 'var(--main-color)' }}
-                    >
-                        追加する
-                        {tempSelectedIngredients.size > 0 && ` (${tempSelectedIngredients.size}個)`}
-                    </button>
-                </div>
-            </div>
-        </div>
-    ) : null;
+    // 食材選択モーダル（PC・モバイル共通）
+    // =============================================
+    const ingredientModal = (
+        <IngredientSelectModal
+            isOpen={showIngredientModal}
+            onClose={() => setShowIngredientModal(false)}
+            ingredients={ingredients}
+            ingredientCategories={ingredientCategories}
+            onConfirm={handleConfirmIngredients}
+            confirmLabel="追加する"
+        />
+    );
 
     // =============================================
     // 公開確認モーダル（PC・モバイル共通）

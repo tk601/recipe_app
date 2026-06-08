@@ -1,11 +1,11 @@
-import { useState, useRef, useMemo, useEffect } from 'react';
-import { createPortal } from 'react-dom';
+import { useState, useMemo, useEffect } from 'react';
 import { Head, router } from '@inertiajs/react';
 import { PageProps, ShoppingList } from '@/types';
-import { Trash2, Plus, X, Search, ChevronDown, ChevronUp } from 'lucide-react';
+import { Trash2, Plus, ChevronDown, ChevronUp } from 'lucide-react';
 import FloatingActionButton from '@/Components/FloatingActionButton';
 import MobileLayout from '@/Layouts/MobileLayout';
 import DesktopLayout from '@/Layouts/DesktopLayout';
+import IngredientSelectModal from '@/Components/IngredientSelectModal';
 
 // 食材の型定義
 interface Ingredient {
@@ -39,15 +39,6 @@ const ShoppingLists = ({ shoppingLists, ingredients, ingredientCategories }: Sho
     // 食材選択モーダルの表示状態
     const [showIngredientModal, setShowIngredientModal] = useState(false);
 
-    // 選択中の食材カテゴリ（食材追加モーダル内）
-    const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
-
-    // 一時的に選択された食材ID
-    const [tempSelectedIngredients, setTempSelectedIngredients] = useState<Set<number>>(new Set());
-
-    // 食材検索キーワード
-    const [ingredientSearchKeyword, setIngredientSearchKeyword] = useState('');
-
     // 自由入力項目
     const [customItem, setCustomItem] = useState('');
 
@@ -56,25 +47,6 @@ const ShoppingLists = ({ shoppingLists, ingredients, ingredientCategories }: Sho
 
     // 自由入力バリデーションエラー
     const [customItemError, setCustomItemError] = useState('');
-
-    // 検索候補の表示状態
-    const [showSearchSuggestions, setShowSearchSuggestions] = useState(false);
-    const searchInputRef = useRef<HTMLDivElement>(null);
-
-    // カテゴリ横スクロールコンテナのref
-    const categoryScrollRef = useRef<HTMLDivElement>(null);
-    // 各カテゴリボタンのrefマップ
-    const categoryButtonRefs = useRef<Map<number, HTMLButtonElement>>(new Map());
-
-    // 選択カテゴリが変わったら中央にスクロール
-    useEffect(() => {
-        if (selectedCategoryId === null) return;
-        const container = categoryScrollRef.current;
-        const button = categoryButtonRefs.current.get(selectedCategoryId);
-        if (!container || !button) return;
-        const scrollTo = button.offsetLeft - container.offsetWidth / 2 + button.offsetWidth / 2;
-        container.scrollTo({ left: scrollTo, behavior: 'smooth' });
-    }, [selectedCategoryId]);
 
     // 削除確認モーダル（アイテム単体）
     const [deleteItemId, setDeleteItemId] = useState<number | null>(null);
@@ -174,44 +146,19 @@ const ShoppingLists = ({ shoppingLists, ingredients, ingredientCategories }: Sho
      */
     const openIngredientModal = () => {
         setShowIngredientModal(true);
-        setSelectedCategoryId(ingredientCategories[0]?.id || null);
-    };
-
-    /**
-     * 食材選択モーダルを閉じる
-     */
-    const closeIngredientModal = () => {
-        setShowIngredientModal(false);
-        setTempSelectedIngredients(new Set());
-        setIngredientSearchKeyword('');
-        setShowSearchSuggestions(false);
-        setCustomItem('');
-    };
-
-    /**
-     * 食材の選択/選択解除
-     */
-    const toggleIngredientSelection = (ingredientId: number) => {
-        const newSelection = new Set(tempSelectedIngredients);
-        if (newSelection.has(ingredientId)) {
-            newSelection.delete(ingredientId);
-        } else {
-            newSelection.add(ingredientId);
-        }
-        setTempSelectedIngredients(newSelection);
     };
 
     /**
      * 選択した食材を確定して買い物リストに追加
      */
-    const confirmIngredientSelection = () => {
-        if (tempSelectedIngredients.size === 0) return;
-
+    const handleConfirmIngredients = (selectedIds: Set<number>) => {
+        if (selectedIds.size === 0) return;
         router.post(route('shopping-lists.store'), {
-            ingredient_ids: Array.from(tempSelectedIngredients),
+            ingredient_ids: Array.from(selectedIds),
         }, {
             onSuccess: () => {
-                closeIngredientModal();
+                setShowIngredientModal(false);
+                setCustomItem('');
             },
         });
     };
@@ -255,65 +202,11 @@ const ShoppingLists = ({ shoppingLists, ingredients, ingredientCategories }: Sho
         }, {
             onSuccess: () => {
                 closeCustomItemModal();
-                closeIngredientModal(); // 材料選択モーダルも閉じる
+                setShowIngredientModal(false);
             },
         });
     };
 
-    /**
-     * 検索候補をフィルタリング
-     */
-    const searchSuggestions = useMemo(() => {
-        if (!ingredientSearchKeyword.trim()) return [];
-        return ingredients.filter(ingredient =>
-            ingredient.name.toLowerCase().includes(ingredientSearchKeyword.toLowerCase())
-        ).slice(0, 10);
-    }, [ingredientSearchKeyword, ingredients]);
-
-    /**
-     * 検索入力の変更処理
-     */
-    const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const value = e.target.value;
-        setIngredientSearchKeyword(value);
-        setShowSearchSuggestions(value.trim() !== '');
-    };
-
-    /**
-     * 検索候補から食材を選択
-     */
-    const handleSelectFromSuggestion = (ingredientId: number, categoryId: number) => {
-        setShowSearchSuggestions(false);
-        setIngredientSearchKeyword('');
-        setSelectedCategoryId(categoryId);
-
-        const newSelection = new Set(tempSelectedIngredients);
-        newSelection.add(ingredientId);
-        setTempSelectedIngredients(newSelection);
-    };
-
-    // カテゴリでフィルタリングされた食材（食材追加モーダル内）
-    const filteredIngredients = ingredients.filter(ing =>
-        selectedCategoryId ? ing.ingredient_category_id === selectedCategoryId : true
-    );
-
-    /**
-     * 検索候補の外側をクリックしたら閉じる
-     */
-    useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
-            const target = event.target as HTMLElement;
-            if (target.closest('[data-suggestion-item]')) return;
-            if (searchInputRef.current && !searchInputRef.current.contains(target)) {
-                setShowSearchSuggestions(false);
-            }
-        };
-
-        if (showIngredientModal) {
-            document.addEventListener('mousedown', handleClickOutside);
-            return () => document.removeEventListener('mousedown', handleClickOutside);
-        }
-    }, [showIngredientModal]);
 
     // PC時はDesktopLayout、モバイル時はMobileLayoutを使用
     const pageContent = (
@@ -482,164 +375,23 @@ const ShoppingLists = ({ shoppingLists, ingredients, ingredientCategories }: Sho
             )}
 
             {/* 材料選択モーダル */}
-            {showIngredientModal && (
-                <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-                    {/* flex flex-col で高さを分割し、食材リストだけをスクロールさせる */}
-                    <div className="bg-white w-full max-w-2xl max-h-[80vh] rounded-2xl overflow-hidden flex flex-col">
-                        {/* モーダルヘッダー（固定） */}
-                        <div className="flex-shrink-0 flex justify-between items-center p-4 border-b" style={{ borderColor: 'var(--gray)' }}>
-                            <h3 className="font-bold" style={{ color: 'var(--black)' }}>材料を選択</h3>
-                            <button onClick={closeIngredientModal}>
-                                <X className="w-6 h-6" style={{ color: 'var(--dark-gray)' }} />
-                            </button>
-                        </div>
-
-                        {/* 検索ボックス（固定） */}
-                        <div className="flex-shrink-0 p-4 border-b space-y-3" style={{ borderColor: 'var(--gray)' }}>
-                            <div className="relative" ref={searchInputRef}>
-                                <Search
-                                    className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5"
-                                    style={{ color: 'var(--dark-gray)' }}
-                                />
-                                <input
-                                    type="text"
-                                    value={ingredientSearchKeyword}
-                                    onChange={handleSearchChange}
-                                    placeholder="食材を検索..."
-                                    className="w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2"
-                                    style={{
-                                        borderColor: 'var(--gray)',
-                                        '--tw-ring-color': 'var(--main-color)'
-                                    } as React.CSSProperties}
-                                />
-                            </div>
-                        </div>
-
-                        {/* 検索候補のドロップダウン */}
-                        {showSearchSuggestions && searchSuggestions.length > 0 && searchInputRef.current && createPortal(
-                            <div
-                                className="fixed bg-white border rounded-lg shadow-lg max-h-64 overflow-y-auto"
-                                style={{
-                                    borderColor: 'var(--gray)',
-                                    top: searchInputRef.current.getBoundingClientRect().bottom + 4,
-                                    left: searchInputRef.current.getBoundingClientRect().left,
-                                    width: searchInputRef.current.offsetWidth,
-                                    zIndex: 10001,
-                                }}
-                            >
-                                {searchSuggestions.map((ingredient) => {
-                                    const category = ingredientCategories.find(cat => cat.id === ingredient.ingredient_category_id);
-                                    return (
-                                        <button
-                                            key={ingredient.id}
-                                            data-suggestion-item
-                                            onClick={() => handleSelectFromSuggestion(ingredient.id, ingredient.ingredient_category_id)}
-                                            className="w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center justify-between border-b last:border-b-0"
-                                            style={{ borderColor: 'var(--gray)' }}
-                                        >
-                                            <div className="flex-1">
-                                                <div className="font-medium" style={{ color: 'var(--black)' }}>
-                                                    {ingredient.name}
-                                                </div>
-                                                <div className="text-xs mt-0.5" style={{ color: 'var(--dark-gray)' }}>
-                                                    {category?.name}
-                                                </div>
-                                            </div>
-                                            <div
-                                                className="px-2 py-1 rounded text-xs"
-                                                style={{
-                                                    backgroundColor: tempSelectedIngredients.has(ingredient.id) ? 'var(--main-color)' : 'var(--light-gray)',
-                                                    color: tempSelectedIngredients.has(ingredient.id) ? 'white' : 'var(--dark-gray)'
-                                                }}
-                                            >
-                                                {tempSelectedIngredients.has(ingredient.id) ? '選択中' : '未選択'}
-                                            </div>
-                                        </button>
-                                    );
-                                })}
-                            </div>,
-                            document.body
-                        )}
-
-                        {/* カテゴリタブ（固定） */}
-                        <div
-                            ref={categoryScrollRef}
-                            className="flex-shrink-0 flex overflow-x-auto p-2 border-b scrollbar-hide"
-                            style={{ borderColor: 'var(--gray)' }}
-                        >
-                            {ingredientCategories.map(cat => (
-                                <button
-                                    key={cat.id}
-                                    ref={(el) => {
-                                        if (el) categoryButtonRefs.current.set(cat.id, el);
-                                        else categoryButtonRefs.current.delete(cat.id);
-                                    }}
-                                    onClick={() => setSelectedCategoryId(cat.id)}
-                                    className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap mr-2 ${
-                                        selectedCategoryId === cat.id ? '' : 'opacity-60'
-                                    }`}
-                                    style={{
-                                        backgroundColor: selectedCategoryId === cat.id ? 'var(--main-color)' : 'var(--light-gray)',
-                                        color: selectedCategoryId === cat.id ? 'white' : 'var(--dark-gray)'
-                                    }}
-                                >
-                                    {cat.name}
-                                </button>
-                            ))}
-                        </div>
-
-                        {/* 食材リスト（flex-1 で残りの高さを使ってスクロール） */}
-                        <div className="flex-1 overflow-y-auto p-4">
-                            {filteredIngredients.length > 0 ? (
-                                <div className="grid grid-cols-2 gap-2">
-                                    {filteredIngredients.map(ing => (
-                                        <button
-                                            key={ing.id}
-                                            onClick={() => toggleIngredientSelection(ing.id)}
-                                            className={`p-3 rounded-lg border text-sm transition-all ${
-                                                tempSelectedIngredients.has(ing.id) ? 'font-bold' : ''
-                                            }`}
-                                            style={{
-                                                borderColor: tempSelectedIngredients.has(ing.id) ? 'var(--main-color)' : 'var(--gray)',
-                                                backgroundColor: tempSelectedIngredients.has(ing.id) ? 'var(--main-color)' : 'white',
-                                                color: tempSelectedIngredients.has(ing.id) ? 'white' : 'var(--black)'
-                                            }}
-                                        >
-                                            {ing.name}
-                                        </button>
-                                    ))}
-                                </div>
-                            ) : (
-                                <div className="text-center py-8">
-                                    <p className="text-sm" style={{ color: 'var(--dark-gray)' }}>
-                                        該当する食材が見つかりませんでした
-                                    </p>
-                                </div>
-                            )}
-                        </div>
-
-                        {/* 確定ボタン・自由入力ボタン（固定） */}
-                        <div className="flex-shrink-0 p-4 border-t space-y-2" style={{ borderColor: 'var(--gray)' }}>
-                            <button
-                                onClick={confirmIngredientSelection}
-                                disabled={tempSelectedIngredients.size === 0}
-                                className="w-full py-3 rounded-lg font-bold text-white"
-                                style={{ backgroundColor: tempSelectedIngredients.size === 0 ? 'var(--gray)' : 'var(--main-color)' }}
-                            >
-                                買い物リストに追加
-                                {tempSelectedIngredients.size > 0 && ` (${tempSelectedIngredients.size}個)`}
-                            </button>
-                            <button
-                                onClick={openCustomItemModal}
-                                className="w-full py-3 rounded-lg font-bold border"
-                                style={{ borderColor: 'var(--sub-color)', color: 'var(--sub-color)', backgroundColor: 'white' }}
-                            >
-                                自由入力
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
+            <IngredientSelectModal
+                isOpen={showIngredientModal}
+                onClose={() => { setShowIngredientModal(false); setCustomItem(''); }}
+                ingredients={ingredients}
+                ingredientCategories={ingredientCategories}
+                onConfirm={handleConfirmIngredients}
+                confirmLabel="買い物リストに追加"
+                footerExtra={
+                    <button
+                        onClick={openCustomItemModal}
+                        className="w-full py-3 rounded-lg font-bold border"
+                        style={{ borderColor: 'var(--sub-color)', color: 'var(--sub-color)', backgroundColor: 'white' }}
+                    >
+                        自由入力
+                    </button>
+                }
+            />
 
             {/* 自由入力ポップアップ */}
             {showCustomItemModal && (
