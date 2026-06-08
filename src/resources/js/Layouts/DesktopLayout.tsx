@@ -1,4 +1,4 @@
-import DesktopHeader from '@/Components/Desktop/Header';
+import DesktopHeader from '@/Layouts/DesktopHeader';
 import { PropsWithChildren } from 'react';
 
 /** ページタイプの定義 */
