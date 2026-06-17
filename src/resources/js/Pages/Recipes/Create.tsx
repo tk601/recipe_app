@@ -244,8 +244,20 @@ export default function RecipeCreate({ ingredients, ingredientCategories, recipe
             setAlertMessage('材料を追加してください');
             return;
         }
+        // 各材料の数量が入力されているかチェック
+        const emptyQuantityIndex = data.ingredients.findIndex(ing => !ing.quantity.trim());
+        if (emptyQuantityIndex !== -1) {
+            setAlertMessage(`「${data.ingredients[emptyQuantityIndex].ingredient_name}」の数量を入力してください`);
+            return;
+        }
         if (data.instructions.length === 0) {
             setAlertMessage('調理手順を追加してください');
+            return;
+        }
+        // 各手順の説明が入力されているかチェック
+        const emptyDescriptionIndex = data.instructions.findIndex(inst => !inst.description.trim());
+        if (emptyDescriptionIndex !== -1) {
+            setAlertMessage(`手順${emptyDescriptionIndex + 1}の説明を入力してください`);
             return;
         }
 
