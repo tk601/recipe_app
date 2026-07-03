@@ -458,7 +458,7 @@ export default function IngredientsIndex({ categories, ingredients, allIngredien
                 style={{
                     borderColor: 'var(--gray)',
                     ...(isDesktop
-                        ? { position: 'sticky', top: '97px' }
+                        ? { position: 'sticky', top: '65px' }
                         : { position: 'fixed', left: 0, right: 0, top: '56px' }
                     )
                 }}
